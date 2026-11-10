@@ -1,0 +1,16 @@
+game,day,pick,win_prob,confidence,model_line,vegas_line,tier,best_bet,ev,stake
+JAX @ BAL,"Thu Nov 05, 08:15 PM ET",JAX,0.796,High,-9.5,-10.0,WATCH,BAL ML (+410),0.0354,0.0
+CIN @ ATL,"Sun Nov 08, 09:30 AM ET",CIN,0.612,Medium,-3.6,-3.0,PASS,CIN ML (-170),-0.0276,0.0
+NYG @ PHI,"Sun Nov 08, 01:00 PM ET",NYG,0.655,Medium,-3.7,-3.5,WATCH,NYG ML (-166),0.0502,0.0
+LA @ WAS,"Sun Nov 08, 01:00 PM ET",LA,0.669,Medium,-1.6,-4.5,PASS,WAS Spread (-102),-0.0122,0.0
+CLE @ NO,"Sun Nov 08, 01:00 PM ET",NO,0.611,Medium,3.5,3.0,PASS,NO ML (-162),-0.0106,0.0
+DAL @ IND,"Sun Nov 08, 01:00 PM ET",DAL,0.689,Medium,-3.2,-5.5,PASS,DAL ML (-238),-0.0203,0.0
+NYJ @ KC,"Sun Nov 08, 01:00 PM ET",KC,0.797,High,9.6,10.0,WATCH,NYJ ML (+440),0.0919,0.0
+DET @ MIA,"Sun Nov 08, 01:00 PM ET",DET,0.736,High,-7.6,-7.0,WATCH,MIA ML (+280),0.0023,0.0
+DEN @ CAR,"Sun Nov 08, 01:00 PM ET",DEN,0.555,Low,-4.3,-2.5,WATCH,CAR ML (+130),0.0225,0.0
+HOU @ LAC,"Sun Nov 08, 04:05 PM ET",HOU,0.673,Medium,-5.1,-4.5,PASS,HOU ML (-218),-0.017,0.0
+LV @ SF,"Sun Nov 08, 04:05 PM ET",SF,0.797,High,12.1,10.0,PASS,LV ML (+390),-0.0063,0.0
+GB @ NE,"Sun Nov 08, 04:25 PM ET",NE,0.656,Medium,1.0,3.5,WATCH,NE ML (-175),0.0318,0.0
+ARI @ SEA,"Sun Nov 08, 04:25 PM ET",SEA,0.775,High,5.3,8.5,WATCH,ARI ML (+350),0.0115,0.0
+TB @ CHI,"Sun Nov 08, 08:20 PM ET",CHI,0.7,Medium,4.7,6.0,WATCH,TB ML (+240),0.0195,0.0
+BUF @ MIN,"Mon Nov 09, 08:15 PM ET",BUF,0.654,Medium,-2.7,-3.5,WATCH,BUF ML (-180),0.0187,0.0

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.DS_Store
+# Raw nflverse downloads (~300 MB) are rebuilt by build_data.py
+raw/
+# Local Odds API key file - never commit
+odds_api_key.txt

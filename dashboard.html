@@ -1,0 +1,451 @@
+<title>Gridiron Edge Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a betting desk. Status band -> slate of game tickets (expand for the simulation) -> track record -> method. */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --panel-2:#f6f8fa; --ink:#15212c; --ink-2:#4a5866; --ink-3:#7c8996;
+  --line:#d6dde4; --accent:#1d4e89; --accent-soft:#e3ecf7;
+  --bet:#17734a; --bet-soft:#ddf1e6; --watch:#a5620a; --watch-soft:#fbeedb; --pass:#6b7783; --pass-soft:#eceff2;
+  --home:#1d4e89; --away:#b0452c; --push:#9aa5b1;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141b; --panel:#161f29; --panel-2:#1b2632; --ink:#e6edf3; --ink-2:#a9b6c3; --ink-3:#7d8b99;
+  --line:#2a3644; --accent:#7fb0ea; --accent-soft:#1c2d42;
+  --bet:#4cc68a; --bet-soft:#173326; --watch:#e9a54a; --watch-soft:#3a2a14; --pass:#93a0ad; --pass-soft:#222c37;
+  --home:#7fb0ea; --away:#ee8a6f; --push:#5d6a77; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --panel:#161f29; --panel-2:#1b2632; --ink:#e6edf3; --ink-2:#a9b6c3; --ink-3:#7d8b99;
+  --line:#2a3644; --accent:#7fb0ea; --accent-soft:#1c2d42;
+  --bet:#4cc68a; --bet-soft:#173326; --watch:#e9a54a; --watch-soft:#3a2a14; --pass:#93a0ad; --pass-soft:#222c37;
+  --home:#7fb0ea; --away:#ee8a6f; --push:#5d6a77; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:20px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:.01em;line-height:1.05;text-wrap:balance;margin:0}
+h1{font-size:2.6rem;text-transform:uppercase}
+h2{font-size:1.7rem;text-transform:uppercase}
+h3{font-size:1.2rem;text-transform:uppercase;letter-spacing:.03em}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.muted{color:var(--ink-2)} .faint{color:var(--ink-3)}
+a{color:var(--accent)}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-bottom:14px;border-bottom:2px solid var(--ink)}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
+nav.tabs a{font-family:var(--display);font-weight:600;font-size:1.05rem;text-transform:uppercase;letter-spacing:.04em;text-decoration:none;color:var(--ink-2);padding:6px 12px;border-radius:6px}
+nav.tabs a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+nav.tabs a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.status{margin-top:18px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:16px 18px;border-radius:var(--r);background:var(--panel);border:1px solid var(--line)}
+.status .big{font-family:var(--display);font-size:3.4rem;font-weight:700;line-height:.9}
+.status.nobets .big{color:var(--pass)} .status.hasbets .big{color:var(--bet)}
+.status p{margin:2px 0 0;max-width:70ch}
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;min-width:0}
+.stat .v{font-family:var(--mono);font-size:1.25rem;font-weight:600}
+.stat .k{font-size:.78rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em}
+.notice{margin-top:12px;padding:10px 14px;border-radius:var(--r);background:var(--watch-soft);color:var(--ink);border:1px solid var(--line);font-size:.92rem}
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:22px 0 10px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:600 .8rem var(--mono);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);padding:6px 10px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+label.inline{display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--ink-2)}
+input[type=number],select{font:500 .9rem var(--mono);padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);width:110px}
+.slate{display:flex;flex-direction:column;gap:10px}
+.ticket{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ticket>.row{display:grid;grid-template-columns:minmax(150px,1.25fr) minmax(170px,1.1fr) minmax(220px,1.6fr) minmax(150px,1fr);gap:14px 18px;align-items:center;padding:14px 16px;cursor:pointer;border-left:5px solid var(--pass)}
+.ticket[data-tier="BET"]>.row{border-left-color:var(--bet)}
+.ticket[data-tier="WATCH"]>.row,.ticket[data-tier="PRICE EDGE"]>.row{border-left-color:var(--watch)}
+.ticket>.row:hover{background:var(--panel-2)}
+.match{min-width:0}
+.match .teams{font-family:var(--display);font-weight:700;font-size:1.55rem;line-height:1;text-transform:uppercase}
+.match .teams .at{color:var(--ink-3);font-weight:500;font-size:1.1rem;margin:0 4px}
+.match .when{font-size:.8rem;color:var(--ink-3);margin-top:4px}
+.match .qbs{font-size:.78rem;color:var(--ink-2)}
+.pickcol{min-width:0}
+.pickcol .lab{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+.pickcol .who{font-family:var(--display);font-weight:700;font-size:1.3rem}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:4px;display:flex}
+.bar span{display:block;height:100%}
+.conf{font:600 .7rem var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);margin-left:6px;vertical-align:middle}
+.ruler{min-width:0}
+.ruler svg{width:100%;height:58px;display:block}
+.betcol{text-align:right;min-width:0}
+.tier{display:inline-block;font:700 .78rem var(--mono);letter-spacing:.08em;padding:4px 9px;border-radius:5px}
+.tier.BET{background:var(--bet-soft);color:var(--bet)} .tier.WATCH,.tier.PRICE{background:var(--watch-soft);color:var(--watch)} .tier.PASS{background:var(--pass-soft);color:var(--pass)}
+.betcol .line{font-family:var(--mono);font-size:.85rem;margin-top:4px}
+.betcol .ev{font-family:var(--mono);font-size:.78rem;color:var(--ink-3)}
+.detail{border-top:1px solid var(--line);padding:16px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px 26px;background:var(--panel-2)}
+.detail h3{margin-bottom:8px}
+.hist svg{width:100%;height:170px;display:block}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--ink-2);margin-top:4px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:600 .7rem var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto}
+.pos{color:var(--bet)} .neg{color:var(--away)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.88rem}
+.kv dt{color:var(--ink-3)} .kv dd{margin:0;font-family:var(--mono)}
+.drivers li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line);font-size:.86rem}
+ul.plain{list-style:none;margin:0;padding:0}
+.inj{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.inj li{font-size:.8rem;padding:2px 0}
+.st-Out{color:var(--away);font-weight:600} .st-Doubtful{color:var(--watch);font-weight:600} .st-Questionable{color:var(--ink-2)}
+section.view{margin-top:22px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.card p{max-width:68ch}
+.chart svg{width:100%;height:220px;display:block}
+.prose{max-width:72ch}
+.prose h3{margin:22px 0 6px}
+.prose code,.cmd{font-family:var(--mono);font-size:.86rem;background:var(--panel-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+pre.cmd{display:block;padding:10px 12px;overflow-x:auto;white-space:pre}
+ol.steps{padding-left:1.2em} ol.steps li{margin:6px 0}
+.verdict{display:inline-block;font:700 .75rem var(--mono);padding:3px 8px;border-radius:4px}
+.verdict.live{background:var(--bet-soft);color:var(--bet)} .verdict.off{background:var(--pass-soft);color:var(--pass)}
+footer{margin-top:40px;font-size:.8rem;color:var(--ink-3);max-width:80ch}
+@media (max-width:860px){
+  .ticket>.row{grid-template-columns:1fr 1fr}
+  .ruler{grid-column:1/-1;order:3} .betcol{text-align:left}
+  .detail{grid-template-columns:1fr}
+  .strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid2{grid-template-columns:1fr}
+}
+@media (max-width:480px){
+  h1{font-size:2rem} .ticket>.row{grid-template-columns:1fr} .inj{grid-template-columns:1fr}
+  .status{grid-template-columns:1fr} .status .big{font-size:2.6rem}
+}
+@media (prefers-reduced-motion:no-preference){.ticket>.row{transition:background .15s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="sub">NFL · model desk</div>
+      <h1 id="h1">Week</h1>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#slate" data-view="slate">This week</a>
+      <a href="#record" data-view="record">Track record</a>
+      <a href="#method" data-view="method">How it works</a>
+    </nav>
+  </header>
+
+  <section class="view" id="v-slate">
+    <div class="status" id="status"></div>
+    <div class="strip" id="strip"></div>
+    <div id="notices"></div>
+    <div class="controls">
+      <div class="chips" role="group" aria-label="Filter">
+        <button class="chip" data-f="all" aria-pressed="true">All games</button>
+        <button class="chip" data-f="BET" aria-pressed="false">Bets</button>
+        <button class="chip" data-f="WATCH" aria-pressed="false">Watch</button>
+        <button class="chip" data-f="PASS" aria-pressed="false">Pass</button>
+      </div>
+      <label class="inline" for="sort">Sort
+        <select id="sort"><option value="time">Kickoff</option><option value="ev">Best EV</option><option value="conf">Win prob</option></select>
+      </label>
+      <label class="inline" for="bankroll">Bankroll $
+        <input type="number" id="bankroll" min="0" step="50">
+      </label>
+    </div>
+    <div class="slate" id="slate"></div>
+  </section>
+
+  <section class="view" id="v-record" hidden></section>
+  <section class="view" id="v-method" hidden></section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script type="application/json" id="data">{"meta":{"season":2026,"week":9,"generated":"2026-11-05 09:17","bankroll":1000,"kelly_fraction":0.25,"max_bet":0.02,"max_week":0.1,"injury_report_for_week":true,"blend":{"beta":0.0,"beta_raw":-0.03041,"beta_se":0.10102,"n":1814,"intercept":0.20764},"shopping":"No Odds API key set: line shopping is off (see odds_api.py to turn it on).","hist_conf":{"Low":{"hit":0.55556,"n":477},"Medium":{"hit":0.62921,"n":712},"High":{"hit":0.75402,"n":435},"Very high":{"hit":0.88587,"n":184}},"n_train_games":2882,"total_stake":0.0},"games":[{"game_id":"2026_09_JAX_BAL","kickoff":"2026-11-05 20:15:00","day":"Thu Nov 05, 08:15 PM ET","away":"JAX","home":"BAL","away_qb":"Trevor Lawrence","home_qb":"Joe Fagnano","spread_line":-10.0,"total_line":39.5,"home_ml":410.0,"away_ml":-550.0,"home_spread_odds":-112.0,"away_spread_odds":-108.0,"mkt_p_home":0.18813,"model_margin":-9.5,"model_margin_lo":-11.8,"model_margin_hi":-7.6,"final_margin":-10.0,"pick":"JAX","pick_prob":0.79638,"confidence":"High","p_home_win":0.20363,"p_home_win_lo":0.19157,"p_home_win_hi":0.2152,"p_home_cover":0.4826,"p_away_cover":0.47815,"p_push":0.03925,"sim_score":"JAX 25 - BAL 14","margin_p10":-27.0,"margin_p90":5.0,"margin_hist":[0.0092,0.0059,0.0034,0.0059,0.0167,0.0051,0.0061,0.0192,0.0087,0.0128,0.0145,0.0264,0.0164,0.0127,0.0272,0.0265,0.0132,0.0265,0.0388,0.0246,0.0168,0.0612,0.0191,0.0189,0.0181,0.0392,0.0104,0.0258,0.0523,0.0285,0.0163,0.0158,0.0833,0.0218,0.0237,0.002,0.0194,0.0173,0.0562,0.0091,0.0077,0.0121,0.0201,0.0086,0.0028,0.0095,0.0042,0.0042,0.0032,0.0092,0.002,0.0024,0.0041,0.0018,0.001,0.0016,0.0016,0.0006,0.0009,0.0008,0.0004,0.0004,0.0001,0.0004,0.0001,0.0,0.0003,0.0,0.0,0.0001,0.0],"bets":[{"kind":"ML","team":"BAL","odds":410.0,"p":0.20262,"p_push":0.002,"breakeven":0.19608,"ev":0.03539,"kelly":0.00863},{"kind":"ML","team":"JAX","odds":-550.0,"p":0.79538,"p_push":0.002,"breakeven":0.84615,"ev":-0.05801,"kelly":0.0},{"kind":"Spread","team":"BAL","odds":-112.0,"p":0.4826,"p_push":0.03925,"breakeven":0.5283,"ev":-0.04726,"kelly":0.0},{"kind":"Spread","team":"JAX","odds":-108.0,"p":0.47815,"p_push":0.03925,"breakeven":0.51923,"ev":-0.03987,"kelly":0.0}],"best":{"kind":"ML","team":"BAL","odds":410.0,"p":0.20262,"p_push":0.002,"breakeven":0.19608,"ev":0.03539,"kelly":0.00863},"tier":"WATCH","stake":0.0,"shop":null,"drivers":[{"factor":"Starting QB quality","pts":-2.4},{"factor":"Elo rating","pts":-1.9},{"factor":"QB change","pts":-1.6},{"factor":"Scores per drive","pts":-1.3}],"injuries":{"JAX":{"players":[{"name":"Travon Walker","pos":"DE","status":"Questionable"},{"name":"Bhayshul Tuten","pos":"RB","status":"Questionable"}],"report_week":9},"BAL":{"players":[{"name":"Lamar Jackson","pos":"QB","status":"Out"},{"name":"Tyler Huntley","pos":"QB","status":"Out"},{"name":"Jaylinn Hawkins","pos":"S","status":"Out"},{"name":"Nate Wiggins","pos":"CB","status":"Questionable"},{"name":"Adam Randall","pos":"RB","status":"Questionable"}],"report_week":9}},"elo_home":1497,"elo_away":1616,"power_home":-3.4,"power_away":7.5},{"game_id":"2026_09_CIN_ATL","kickoff":"2026-11-08 09:30:00","day":"Sun Nov 08, 09:30 AM ET","away":"CIN","home":"ATL","away_qb":"Joe Burrow","home_qb":"Michael Penix Jr.","spread_line":-3.0,"total_line":52.5,"home_ml":142.0,"away_ml":-170.0,"home_spread_odds":-108.0,"away_spread_odds":-112.0,"mkt_p_home":0.39624,"model_margin":-3.6,"model_margin_lo":-6.4,"model_margin_hi":-1.9,"final_margin":-3.0,"pick":"CIN","pick_prob":0.61191,"confidence":"Medium","p_home_win":0.38809,"p_home_win_lo":0.3706,"p_home_win_hi":0.40517,"p_home_cover":0.4466,"p_away_cover":0.453,"p_push":0.1004,"sim_score":"CIN 28 - ATL 24","margin_p10":-19.0,"margin_p90":12.0,"margin_hist":[0.0028,0.0016,0.0011,0.0021,0.0053,0.0014,0.0022,0.0086,0.0038,0.0048,0.006,0.0122,0.0079,0.0064,0.0143,0.0133,0.0073,0.0162,0.0245,0.016,0.0116,0.046,0.0144,0.0158,0.0159,0.034,0.0089,0.0255,0.0513,0.0298,0.018,0.0181,0.1004,0.0264,0.0307,0.0028,0.029,0.0236,0.0855,0.0152,0.0151,0.0227,0.0389,0.0171,0.006,0.0211,0.0091,0.0091,0.0079,0.0229,0.0055,0.0068,0.0111,0.0065,0.0025,0.005,0.0062,0.0022,0.0027,0.0037,0.0018,0.0013,0.0012,0.0022,0.0006,0.0006,0.0014,0.0004,0.0002,0.0004,0.0004],"bets":[{"kind":"ML","team":"ATL","odds":142.0,"p":0.3867,"p_push":0.00278,"breakeven":0.41322,"ev":-0.06141,"kelly":0.0},{"kind":"ML","team":"CIN","odds":-170.0,"p":0.61053,"p_push":0.00278,"breakeven":0.62963,"ev":-0.02757,"kelly":0.0},{"kind":"Spread","team":"ATL","odds":-108.0,"p":0.4466,"p_push":0.1004,"breakeven":0.51923,"ev":-0.03948,"kelly":0.0},{"kind":"Spread","team":"CIN","odds":-112.0,"p":0.453,"p_push":0.1004,"breakeven":0.5283,"ev":-0.04214,"kelly":0.0}],"best":{"kind":"ML","team":"CIN","odds":-170.0,"p":0.61053,"p_push":0.00278,"breakeven":0.62963,"ev":-0.02757,"kelly":0.0},"tier":"PASS","stake":0.0,"shop":null,"drivers":[{"factor":"Home field","pts":-2.4},{"factor":"Starting QB quality","pts":-2.0},{"factor":"Elo rating","pts":-1.7},{"factor":"Success rate","pts":-1.2}],"injuries":{"CIN":{"players":[],"report_week":9},"ATL":{"players":[],"report_week":9}},"elo_home":1459,"elo_away":1566,"power_home":-0.5,"power_away":4.5},{"game_id":"2026_09_NYG_PHI","kickoff":"2026-11-08 13:00:00","day":"Sun Nov 08, 01:00 PM ET","away":"NYG","home":"PHI","away_qb":"J.J. McCarthy","home_qb":"Joe Milton III","spread_line":-3.5,"total_line":38.5,"home_ml":140.0,"away_ml":-166.0,"home_spread_odds":-118.0,"away_spread_odds":-102.0,"mkt_p_home":0.40036,"model_margin":-3.7,"model_margin_lo":-5.0,"model_margin_hi":-1.4,"final_margin":-3.5,"pick":"NYG","pick_prob":0.65511,"confidence":"Medium","p_home_win":0.34489,"p_home_win_lo":0.33863,"p_home_win_hi":0.36103,"p_home_cover":0.50008,"p_away_cover":0.49993,"p_push":0.0,"sim_score":"NYG 22 - PHI 17","margin_p10":-21.0,"margin_p90":10.0,"margin_hist":[0.0032,0.0018,0.0013,0.0026,0.0064,0.002,0.0028,0.0108,0.0046,0.0063,0.0079,0.0152,0.0102,0.0084,0.0181,0.0158,0.0076,0.0181,0.0274,0.0183,0.0126,0.0484,0.0148,0.0181,0.0162,0.037,0.0102,0.0262,0.055,0.0297,0.0178,0.018,0.0978,0.0276,0.0286,0.0024,0.0267,0.0235,0.0794,0.0134,0.0127,0.0207,0.0338,0.0155,0.005,0.0194,0.0075,0.0079,0.0068,0.0192,0.0043,0.0067,0.0095,0.0056,0.0025,0.0036,0.0047,0.0018,0.002,0.0031,0.0014,0.0012,0.0008,0.0018,0.0004,0.0004,0.0011,0.0002,0.0001,0.0002,0.0004],"bets":[{"kind":"ML","team":"PHI","odds":140.0,"p":0.34368,"p_push":0.00243,"breakeven":0.41667,"ev":-0.17276,"kelly":0.0},{"kind":"ML","team":"NYG","odds":-166.0,"p":0.6539,"p_push":0.00243,"breakeven":0.62406,"ev":0.05024,"kelly":0.0834},{"kind":"Spread","team":"PHI","odds":-118.0,"p":0.50008,"p_push":0.0,"breakeven":0.54128,"ev":-0.07613,"kelly":0.0},{"kind":"Spread","team":"NYG","odds":-102.0,"p":0.49993,"p_push":0.0,"breakeven":0.50495,"ev":-0.00995,"kelly":0.0}],"best":{"kind":"ML","team":"NYG","odds":-166.0,"p":0.6539,"p_push":0.00243,"breakeven":0.62406,"ev":0.05024,"kelly":0.0834},"tier":"WATCH","stake":0.0,"shop":null,"drivers":[{"factor":"QB change","pts":-1.6},{"factor":"Scores per drive","pts":-1.4},{"factor":"Starting QB quality","pts":1.3},{"factor":"Rest advantage","pts":-1.3}],"injuries":{"NYG":{"players":[],"report_week":9},"PHI":{"players":[],"report_week":9}},"elo_home":1415,"elo_away":1459,"power_home":-6.2,"power_away":-1.4},{"game_id":"2026_09_LA_WAS","kickoff":"2026-11-08 13:00:00","day":"Sun Nov 08, 01:00 PM ET","away":"LA","home":"WAS","away_qb":"Matthew Stafford","home_qb":"Jayden Daniels","spread_line":-4.5,"total_line":48.5,"home_ml":185.0,"away_ml":-225.0,"home_spread_odds":-102.0,"away_spread_odds":-118.0,"mkt_p_home":0.33635,"model_margin":-1.6,"model_margin_lo":-4.4,"model_margin_hi":-0.3,"final_margin":-4.5,"pick":"LA","pick_prob":0.66908,"confidence":"Medium","p_home_win":0.33092,"p_home_win_lo":0.31477,"p_home_win_hi":0.33783,"p_home_cover":0.49878,"p_away_cover":0.50123,"p_push":0.0,"sim_score":"LA 27 - WAS 22","margin_p10":-22.0,"margin_p90":10.0,"margin_hist":[0.0038,0.0028,0.0016,0.003,0.0073,0.0028,0.0027,0.0106,0.0046,0.0072,0.0086,0.0172,0.0113,0.0092,0.0176,0.0166,0.0093,0.0201,0.0286,0.0192,0.0138,0.0518,0.0158,0.0166,0.0166,0.0369,0.009,0.0257,0.0541,0.0317,0.0169,0.0188,0.0943,0.0253,0.0282,0.0025,0.0255,0.0228,0.0792,0.0141,0.012,0.0205,0.0322,0.0149,0.0053,0.0167,0.0069,0.0077,0.0066,0.0186,0.0043,0.0054,0.0081,0.0048,0.0022,0.0037,0.004,0.0016,0.002,0.0033,0.0014,0.001,0.0006,0.0013,0.0004,0.0003,0.0006,0.0003,0.0001,0.0002,0.0003],"bets":[{"kind":"ML","team":"WAS","odds":185.0,"p":0.32967,"p_push":0.0025,"breakeven":0.35088,"ev":-0.05793,"kelly":0.0},{"kind":"ML","team":"LA","odds":-225.0,"p":0.66783,"p_push":0.0025,"breakeven":0.69231,"ev":-0.03286,"kelly":0.0},{"kind":"Spread","team":"WAS","odds":-102.0,"p":0.49878,"p_push":0.0,"breakeven":0.50495,"ev":-0.01223,"kelly":0.0},{"kind":"Spread","team":"LA","odds":-118.0,"p":0.50123,"p_push":0.0,"breakeven":0.54128,"ev":-0.07401,"kelly":0.0}],"best":{"kind":"Spread","team":"WAS","odds":-102.0,"p":0.49878,"p_push":0.0,"breakeven":0.50495,"ev":-0.01223,"kelly":0.0},"tier":"PASS","stake":0.0,"shop":null,"drivers":[{"factor":"Success rate","pts":-2.6},{"factor":"Elo rating","pts":-2.4},{"factor":"EPA in competitive situations","pts":1.7},{"factor":"TD per drive","pts":1.5}],"injuries":{"LA":{"players":[],"report_week":9},"WAS":{"players":[],"report_week":9}},"elo_home":1438,"elo_away":1585,"power_home":-3.1,"power_away":2.3},{"game_id":"2026_09_CLE_NO","kickoff":"2026-11-08 13:00:00","day":"Sun Nov 08, 01:00 PM ET","away":"CLE","home":"NO","away_qb":"Shedeur Sanders","home_qb":"Tyler Shough","spread_line":3.0,"total_line":42.5,"home_ml":-162.0,"away_ml":136.0,"home_spread_odds":-112.0,"away_spread_odds":-108.0,"mkt_p_home":0.59337,"model_margin":3.5,"model_margin_lo":1.8,"model_margin_hi":6.2,"final_margin":3.0,"pick":"NO","pick_prob":0.61147,"confidence":"Medium","p_home_win":0.61147,"p_home_win_lo":0.59623,"p_home_win_hi":0.62713,"p_home_cover":0.45432,"p_away_cover":0.44782,"p_push":0.09785,"sim_score":"CLE 20 - NO 23","margin_p10":-12.0,"margin_p90":20.0,"margin_hist":[0.0002,0.0004,0.0001,0.0004,0.0015,0.0004,0.0007,0.0025,0.0009,0.0016,0.0017,0.004,0.0028,0.0028,0.0057,0.0056,0.0027,0.0071,0.0115,0.0074,0.0058,0.0239,0.008,0.0089,0.0095,0.0218,0.0056,0.0177,0.0374,0.0223,0.0139,0.0146,0.084,0.0249,0.0282,0.0024,0.0297,0.0284,0.0979,0.018,0.0176,0.0301,0.0524,0.0258,0.0099,0.0343,0.0151,0.0154,0.0158,0.0456,0.011,0.0166,0.0247,0.0155,0.006,0.0139,0.0154,0.0062,0.0081,0.0124,0.0061,0.005,0.0032,0.008,0.0023,0.0021,0.0056,0.002,0.0013,0.0016,0.0024],"bets":[{"kind":"ML","team":"NO","odds":-162.0,"p":0.6103,"p_push":0.00235,"breakeven":0.61832,"ev":-0.01062,"kelly":0.0},{"kind":"ML","team":"CLE","odds":136.0,"p":0.38735,"p_push":0.00235,"breakeven":0.42373,"ev":-0.0835,"kelly":0.0},{"kind":"Spread","team":"NO","odds":-112.0,"p":0.45432,"p_push":0.09785,"breakeven":0.5283,"ev":-0.04218,"kelly":0.0},{"kind":"Spread","team":"CLE","odds":-108.0,"p":0.44782,"p_push":0.09785,"breakeven":0.51923,"ev":-0.03967,"kelly":0.0}],"best":{"kind":"ML","team":"NO","odds":-162.0,"p":0.6103,"p_push":0.00235,"breakeven":0.61832,"ev":-0.01062,"kelly":0.0},"tier":"PASS","stake":0.0,"shop":null,"drivers":[{"factor":"Starting QB quality","pts":2.4},{"factor":"QB change","pts":1.6},{"factor":"Success rate","pts":-1.5},{"factor":"Rest advantage","pts":1.3}],"injuries":{"CLE":{"players":[],"report_week":9},"NO":{"players":[],"report_week":9}},"elo_home":1408,"elo_away":1445,"power_home":-3.0,"power_away":-3.2},{"game_id":"2026_09_DAL_IND","kickoff":"2026-11-08 13:00:00","day":"Sun Nov 08, 01:00 PM ET","away":"DAL","home":"IND","away_qb":"Dak Prescott","home_qb":"Daniel Jones","spread_line":-5.5,"total_line":51.5,"home_ml":195.0,"away_ml":-238.0,"home_spread_odds":-108.0,"away_spread_odds":-112.0,"mkt_p_home":0.32497,"model_margin":-3.2,"model_margin_lo":-4.5,"model_margin_hi":-2.0,"final_margin":-5.5,"pick":"DAL","pick_prob":0.68949,"confidence":"Medium","p_home_win":0.31051,"p_home_win_lo":0.2987,"p_home_win_hi":0.32703,"p_home_cover":0.49917,"p_away_cover":0.50082,"p_push":0.0,"sim_score":"DAL 29 - IND 23","margin_p10":-22.0,"margin_p90":8.0,"margin_hist":[0.0044,0.0026,0.0014,0.0032,0.0087,0.0027,0.0031,0.0123,0.0054,0.0074,0.0079,0.0173,0.0109,0.0089,0.0192,0.0169,0.0084,0.0187,0.0306,0.0205,0.0139,0.0549,0.0168,0.0178,0.0162,0.0383,0.01,0.027,0.055,0.0303,0.0182,0.0179,0.0982,0.026,0.0274,0.0019,0.0253,0.0211,0.0764,0.0129,0.0118,0.0193,0.0292,0.0138,0.005,0.0167,0.0066,0.0068,0.0063,0.0165,0.0037,0.0047,0.0078,0.0044,0.0017,0.0034,0.0037,0.0017,0.0019,0.0026,0.001,0.0011,0.0004,0.001,0.0003,0.0004,0.001,0.0001,0.0001,0.0001,0.0003],"bets":[{"kind":"ML","team":"IND","odds":195.0,"p":0.30957,"p_push":0.00187,"breakeven":0.33898,"ev":-0.08488,"kelly":0.0},{"kind":"ML","team":"DAL","odds":-238.0,"p":0.68855,"p_push":0.00187,"breakeven":0.70414,"ev":-0.02027,"kelly":0.0},{"kind":"Spread","team":"IND","odds":-108.0,"p":0.49917,"p_push":0.0,"breakeven":0.51923,"ev":-0.03863,"kelly":0.0},{"kind":"Spread","team":"DAL","odds":-112.0,"p":0.50082,"p_push":0.0,"breakeven":0.5283,"ev":-0.05201,"kelly":0.0}],"best":{"kind":"ML","team":"DAL","odds":-238.0,"p":0.68855,"p_push":0.00187,"breakeven":0.70414,"ev":-0.02027,"kelly":0.0},"tier":"PASS","stake":0.0,"shop":null,"drivers":[{"factor":"Starting QB quality","pts":-2.7},{"factor":"EPA in competitive situations","pts":0.9},{"factor":"Passing efficiency","pts":-0.8},{"factor":"Elo rating","pts":-0.8}],"injuries":{"DAL":{"players":[],"report_week":9},"IND":{"players":[],"report_week":9}},"elo_home":1400,"elo_away":1446,"power_home":-4.5,"power_away":-1.0},{"game_id":"2026_09_NYJ_KC","kickoff":"2026-11-08 13:00:00","day":"Sun Nov 08, 01:00 PM ET","away":"NYJ","home":"KC","away_qb":"Geno Smith","home_qb":"Patrick Mahomes","spread_line":10.0,"total_line":47.5,"home_ml":-600.0,"away_ml":440.0,"home_spread_odds":-108.0,"away_spread_odds":-112.0,"mkt_p_home":0.82234,"model_margin":9.6,"model_margin_lo":6.9,"model_margin_hi":11.1,"final_margin":10.0,"pick":"KC","pick_prob":0.79724,"confidence":"High","p_home_win":0.79724,"p_home_win_lo":0.78293,"p_home_win_hi":0.80947,"p_home_cover":0.47463,"p_away_cover":0.48333,"p_push":0.04205,"sim_score":"NYJ 19 - KC 29","margin_p10":-5.0,"margin_p90":27.0,"margin_hist":[0.0,0.0001,0.0,0.0,0.0002,0.0001,0.0001,0.0006,0.0002,0.0003,0.0006,0.001,0.0006,0.0006,0.0015,0.0016,0.001,0.0022,0.0038,0.003,0.0021,0.0086,0.003,0.0034,0.0039,0.0093,0.0028,0.0093,0.021,0.0119,0.0083,0.0091,0.0574,0.0158,0.018,0.0018,0.0227,0.0218,0.0817,0.0168,0.0164,0.0288,0.0555,0.0257,0.0104,0.042,0.0177,0.0196,0.019,0.0614,0.0169,0.0234,0.0381,0.025,0.0121,0.0254,0.0274,0.0134,0.016,0.0286,0.0137,0.0121,0.009,0.0208,0.007,0.0043,0.015,0.0062,0.0034,0.0053,0.0096],"bets":[{"kind":"ML","team":"KC","odds":-600.0,"p":0.79635,"p_push":0.00178,"breakeven":0.85714,"ev":-0.06915,"kelly":0.0},{"kind":"ML","team":"NYJ","odds":440.0,"p":0.20187,"p_push":0.00178,"breakeven":0.18519,"ev":0.0919,"kelly":0.02089},{"kind":"Spread","team":"KC","odds":-108.0,"p":0.47463,"p_push":0.04205,"breakeven":0.51923,"ev":-0.04386,"kelly":0.0},{"kind":"Spread","team":"NYJ","odds":-112.0,"p":0.48333,"p_push":0.04205,"breakeven":0.5283,"ev":-0.04308,"kelly":0.0}],"best":{"kind":"ML","team":"NYJ","odds":440.0,"p":0.20187,"p_push":0.00178,"breakeven":0.18519,"ev":0.0919,"kelly":0.02089},"tier":"WATCH","stake":0.0,"shop":null,"drivers":[{"factor":"Elo rating","pts":3.3},{"factor":"Starting QB quality","pts":2.3},{"factor":"EPA in competitive situations","pts":-1.1},{"factor":"TD per drive","pts":-1.0}],"injuries":{"NYJ":{"players":[],"report_week":9},"KC":{"players":[],"report_week":9}},"elo_home":1549,"elo_away":1341,"power_home":1.7,"power_away":-3.0},{"game_id":"2026_09_DET_MIA","kickoff":"2026-11-08 13:00:00","day":"Sun Nov 08, 01:00 PM ET","away":"DET","home":"MIA","away_qb":"Jared Goff","home_qb":"Malik Willis","spread_line":-7.0,"total_line":50.5,"home_ml":280.0,"away_ml":-355.0,"home_spread_odds":-112.0,"away_spread_odds":-108.0,"mkt_p_home":0.25222,"model_margin":-7.6,"model_margin_lo":-9.7,"model_margin_hi":-6.7,"final_margin":-7.0,"pick":"DET","pick_prob":0.73579,"confidence":"High","p_home_win":0.26421,"p_home_win_lo":0.24793,"p_home_win_hi":0.27753,"p_home_cover":0.47065,"p_away_cover":0.47325,"p_push":0.0561,"sim_score":"DET 29 - MIA 22","margin_p10":-24.0,"margin_p90":7.0,"margin_hist":[0.0062,0.0034,0.0021,0.004,0.011,0.0034,0.0052,0.0144,0.0068,0.0094,0.0106,0.0213,0.0128,0.0106,0.0226,0.0207,0.0106,0.0213,0.0342,0.0227,0.0158,0.0566,0.0179,0.0193,0.017,0.0382,0.0107,0.0295,0.0561,0.0296,0.0178,0.0184,0.0885,0.026,0.0252,0.0019,0.0229,0.0209,0.0654,0.0117,0.0103,0.0161,0.0272,0.0116,0.0038,0.013,0.0055,0.0052,0.0044,0.0128,0.0032,0.0043,0.0057,0.0036,0.0016,0.0022,0.0025,0.0012,0.0012,0.0019,0.0008,0.0008,0.0005,0.0008,0.0003,0.0002,0.0004,0.0003,0.0001,0.0001,0.0001],"bets":[{"kind":"ML","team":"MIA","odds":280.0,"p":0.26325,"p_push":0.00193,"breakeven":0.26316,"ev":0.00227,"kelly":0.00081},{"kind":"ML","team":"DET","odds":-355.0,"p":0.73483,"p_push":0.00193,"breakeven":0.78022,"ev":-0.05626,"kelly":0.0},{"kind":"Spread","team":"MIA","odds":-112.0,"p":0.47065,"p_push":0.0561,"breakeven":0.5283,"ev":-0.05303,"kelly":0.0},{"kind":"Spread","team":"DET","odds":-108.0,"p":0.47325,"p_push":0.0561,"breakeven":0.51923,"ev":-0.03246,"kelly":0.0}],"best":{"kind":"ML","team":"MIA","odds":280.0,"p":0.26325,"p_push":0.00193,"breakeven":0.26316,"ev":0.00227,"kelly":0.00081},"tier":"WATCH","stake":0.0,"shop":null,"drivers":[{"factor":"Elo rating","pts":-3.3},{"factor":"Starting QB quality","pts":-3.0},{"factor":"Success rate","pts":-2.2},{"factor":"Scores per drive","pts":-1.4}],"injuries":{"DET":{"players":[],"report_week":9},"MIA":{"players":[],"report_week":9}},"elo_home":1375,"elo_away":1577,"power_home":-4.4,"power_away":2.7},{"game_id":"2026_09_DEN_CAR","kickoff":"2026-11-08 13:00:00","day":"Sun Nov 08, 01:00 PM ET","away":"DEN","home":"CAR","away_qb":"Bo Nix","home_qb":"Bryce Young","spread_line":-2.5,"total_line":44.5,"home_ml":130.0,"away_ml":-155.0,"home_spread_odds":100.0,"away_spread_odds":-120.0,"mkt_p_home":0.41701,"model_margin":-4.3,"model_margin_lo":-6.5,"model_margin_hi":-3.3,"final_margin":-2.5,"pick":"DEN","pick_prob":0.55525,"confidence":"Low","p_home_win":0.44475,"p_home_win_lo":0.42157,"p_home_win_hi":0.46273,"p_home_cover":0.50353,"p_away_cover":0.49647,"p_push":0.0,"sim_score":"DEN 23 - CAR 22","margin_p10":-17.0,"margin_p90":14.0,"margin_hist":[0.002,0.0013,0.0007,0.0012,0.0041,0.0014,0.0014,0.0064,0.0031,0.0045,0.0049,0.009,0.0062,0.0058,0.0113,0.0109,0.0054,0.0134,0.0205,0.0132,0.0101,0.04,0.0122,0.0142,0.0136,0.0311,0.0088,0.0234,0.0492,0.0291,0.0177,0.0181,0.0988,0.0276,0.0298,0.0028,0.03,0.0266,0.0945,0.0159,0.0153,0.0247,0.0412,0.019,0.0078,0.0243,0.0115,0.0095,0.0096,0.0294,0.0076,0.0095,0.0136,0.0092,0.0036,0.0066,0.0068,0.0032,0.0036,0.0049,0.0023,0.002,0.0015,0.003,0.0007,0.0008,0.0018,0.0006,0.0002,0.0006,0.0009],"bets":[{"kind":"ML","team":"CAR","odds":130.0,"p":0.44335,"p_push":0.0028,"breakeven":0.43478,"ev":0.0225,"kelly":0.01731},{"kind":"ML","team":"DEN","odds":-155.0,"p":0.55385,"p_push":0.0028,"breakeven":0.60784,"ev":-0.08603,"kelly":0.0},{"kind":"Spread","team":"CAR","odds":100.0,"p":0.50353,"p_push":0.0,"breakeven":0.5,"ev":0.00705,"kelly":0.00705},{"kind":"Spread","team":"DEN","odds":-120.0,"p":0.49647,"p_push":0.0,"breakeven":0.54545,"ev":-0.0898,"kelly":0.0}],"best":{"kind":"ML","team":"CAR","odds":130.0,"p":0.44335,"p_push":0.0028,"breakeven":0.43478,"ev":0.0225,"kelly":0.01731},"tier":"WATCH","stake":0.0,"shop":null,"drivers":[{"factor":"Elo rating","pts":-3.2},{"factor":"Starting QB quality","pts":-1.8},{"factor":"Sack rate","pts":-1.0},{"factor":"EPA in competitive situations","pts":0.8}],"injuries":{"DEN":{"players":[],"report_week":9},"CAR":{"players":[],"report_week":9}},"elo_home":1432,"elo_away":1632,"power_home":-1.9,"power_away":2.1},{"game_id":"2026_09_HOU_LAC","kickoff":"2026-11-08 16:05:00","day":"Sun Nov 08, 04:05 PM ET","away":"HOU","home":"LAC","away_qb":"C.J. Stroud","home_qb":"Justin Herbert","spread_line":-4.5,"total_line":40.5,"home_ml":180.0,"away_ml":-218.0,"home_spread_odds":-105.0,"away_spread_odds":-115.0,"mkt_p_home":0.34252,"model_margin":-5.1,"model_margin_lo":-7.7,"model_margin_hi":-3.7,"final_margin":-4.5,"pick":"HOU","pick_prob":0.67345,"confidence":"Medium","p_home_win":0.32655,"p_home_win_lo":0.31257,"p_home_win_hi":0.33977,"p_home_cover":0.49772,"p_away_cover":0.50228,"p_push":0.0,"sim_score":"HOU 23 - LAC 18","margin_p10":-21.0,"margin_p90":10.0,"margin_hist":[0.0032,0.003,0.0016,0.003,0.008,0.0024,0.0029,0.0103,0.0048,0.0075,0.0073,0.016,0.0098,0.0087,0.0189,0.0168,0.0085,0.019,0.029,0.0196,0.0134,0.0526,0.0162,0.0169,0.0159,0.0362,0.0104,0.0261,0.055,0.0314,0.0189,0.0186,0.0963,0.027,0.0282,0.0022,0.0258,0.0227,0.078,0.0142,0.0122,0.0205,0.0313,0.0136,0.0046,0.0179,0.0072,0.0076,0.0061,0.0189,0.0038,0.0056,0.0084,0.0047,0.0022,0.0038,0.0034,0.0015,0.0018,0.0028,0.0016,0.0008,0.0005,0.0013,0.0004,0.0002,0.0006,0.0002,0.0001,0.0002,0.0003],"bets":[{"kind":"ML","team":"LAC","odds":180.0,"p":0.32543,"p_push":0.00225,"breakeven":0.35714,"ev":-0.08656,"kelly":0.0},{"kind":"ML","team":"HOU","odds":-218.0,"p":0.67232,"p_push":0.00225,"breakeven":0.68553,"ev":-0.01702,"kelly":0.0},{"kind":"Spread","team":"LAC","odds":-105.0,"p":0.49772,"p_push":0.0,"breakeven":0.5122,"ev":-0.02825,"kelly":0.0},{"kind":"Spread","team":"HOU","odds":-115.0,"p":0.50228,"p_push":0.0,"breakeven":0.53488,"ev":-0.06096,"kelly":0.0}],"best":{"kind":"ML","team":"HOU","odds":-218.0,"p":0.67232,"p_push":0.00225,"breakeven":0.68553,"ev":-0.01702,"kelly":0.0},"tier":"PASS","stake":0.0,"shop":null,"drivers":[{"factor":"Elo rating","pts":-1.9},{"factor":"Success rate","pts":-1.8},{"factor":"Rest advantage","pts":-1.3},{"factor":"EPA in competitive situations","pts":1.1}],"injuries":{"HOU":{"players":[],"report_week":9},"LAC":{"players":[],"report_week":9}},"elo_home":1393,"elo_away":1512,"power_home":-6.4,"power_away":0.6},{"game_id":"2026_09_LV_SF","kickoff":"2026-11-08 16:05:00","day":"Sun Nov 08, 04:05 PM ET","away":"LV","home":"SF","away_qb":"Kirk Cousins","home_qb":"Brock Purdy","spread_line":10.0,"total_line":52.5,"home_ml":-520.0,"away_ml":390.0,"home_spread_odds":-108.0,"away_spread_odds":-112.0,"mkt_p_home":0.80429,"model_margin":12.1,"model_margin_lo":9.3,"model_margin_hi":13.3,"final_margin":10.0,"pick":"SF","pick_prob":0.79669,"confidence":"High","p_home_win":0.79669,"p_home_win_lo":0.7842,"p_home_win_hi":0.81093,"p_home_cover":0.47923,"p_away_cover":0.48247,"p_push":0.0383,"sim_score":"LV 21 - SF 32","margin_p10":-5.0,"margin_p90":27.0,"margin_hist":[0.0,0.0,0.0,0.0,0.0,0.0001,0.0002,0.0003,0.0002,0.0002,0.0003,0.0007,0.0006,0.0007,0.0013,0.0013,0.001,0.0021,0.0038,0.0027,0.0022,0.0079,0.0031,0.0039,0.0044,0.0104,0.0034,0.0086,0.0204,0.0122,0.0084,0.009,0.0578,0.016,0.0193,0.0018,0.0234,0.02,0.0828,0.0171,0.0162,0.0288,0.0532,0.0265,0.0102,0.0383,0.0178,0.021,0.0185,0.0634,0.0161,0.0242,0.0377,0.0261,0.012,0.0252,0.0282,0.0132,0.0168,0.0274,0.0135,0.0122,0.0086,0.0209,0.0068,0.005,0.0156,0.0063,0.0034,0.0054,0.0086],"bets":[{"kind":"ML","team":"SF","odds":-520.0,"p":0.7958,"p_push":0.00178,"breakeven":0.83871,"ev":-0.04939,"kelly":0.0},{"kind":"ML","team":"LV","odds":390.0,"p":0.20242,"p_push":0.00178,"breakeven":0.20408,"ev":-0.00634,"kelly":0.0},{"kind":"Spread","team":"SF","odds":-108.0,"p":0.47923,"p_push":0.0383,"breakeven":0.51923,"ev":-0.03875,"kelly":0.0},{"kind":"Spread","team":"LV","odds":-112.0,"p":0.48247,"p_push":0.0383,"breakeven":0.5283,"ev":-0.04844,"kelly":0.0}],"best":{"kind":"ML","team":"LV","odds":390.0,"p":0.20242,"p_push":0.00178,"breakeven":0.20408,"ev":-0.00634,"kelly":0.0},"tier":"PASS","stake":0.0,"shop":null,"drivers":[{"factor":"Elo rating","pts":3.2},{"factor":"Success rate","pts":2.4},{"factor":"Rushing efficiency","pts":1.7},{"factor":"EPA in competitive situations","pts":-1.7}],"injuries":{"LV":{"players":[],"report_week":9},"SF":{"players":[],"report_week":9}},"elo_home":1619,"elo_away":1415,"power_home":4.1,"power_away":-2.3},{"game_id":"2026_09_GB_NE","kickoff":"2026-11-08 16:25:00","day":"Sun Nov 08, 04:25 PM ET","away":"GB","home":"NE","away_qb":"Jordan Love","home_qb":"Drake Maye","spread_line":3.5,"total_line":45.5,"home_ml":-175.0,"away_ml":145.0,"home_spread_odds":-102.0,"away_spread_odds":-118.0,"mkt_p_home":0.60924,"model_margin":1.0,"model_margin_lo":-0.4,"model_margin_hi":2.0,"final_margin":3.5,"pick":"NE","pick_prob":0.65627,"confidence":"Medium","p_home_win":0.65627,"p_home_win_lo":0.64107,"p_home_win_hi":0.66983,"p_home_cover":0.50287,"p_away_cover":0.49712,"p_push":0.0,"sim_score":"GB 20 - NE 25","margin_p10":-10.0,"margin_p90":21.0,"margin_hist":[0.0003,0.0002,0.0001,0.0004,0.0009,0.0003,0.0002,0.0014,0.0008,0.0015,0.0017,0.0032,0.0022,0.0018,0.0045,0.0041,0.0023,0.0057,0.0085,0.0056,0.0047,0.0204,0.0061,0.0075,0.0076,0.0187,0.0058,0.0156,0.0355,0.0196,0.0112,0.0139,0.0812,0.0217,0.0267,0.0022,0.0298,0.0262,0.0964,0.0171,0.0186,0.0305,0.0525,0.0277,0.0103,0.0359,0.016,0.0177,0.0164,0.0515,0.0125,0.0188,0.0287,0.018,0.0081,0.0157,0.0173,0.007,0.0099,0.015,0.0073,0.006,0.0043,0.0113,0.0028,0.002,0.0066,0.0028,0.0012,0.0024,0.0035],"bets":[{"kind":"ML","team":"NE","odds":-175.0,"p":0.65517,"p_push":0.0022,"breakeven":0.63636,"ev":0.03176,"kelly":0.05558},{"kind":"ML","team":"GB","odds":145.0,"p":0.34263,"p_push":0.0022,"breakeven":0.40816,"ev":-0.15837,"kelly":0.0},{"kind":"Spread","team":"NE","odds":-102.0,"p":0.50287,"p_push":0.0,"breakeven":0.50495,"ev":-0.00411,"kelly":0.0},{"kind":"Spread","team":"GB","odds":-118.0,"p":0.49712,"p_push":0.0,"breakeven":0.54128,"ev":-0.08158,"kelly":0.0}],"best":{"kind":"ML","team":"NE","odds":-175.0,"p":0.65517,"p_push":0.0022,"breakeven":0.63636,"ev":0.03176,"kelly":0.05558},"tier":"WATCH","stake":0.0,"shop":null,"drivers":[{"factor":"Success rate","pts":1.1},{"factor":"Elo rating","pts":1.0},{"factor":"Starting QB quality","pts":-0.8},{"factor":"Rest advantage","pts":-0.6}],"injuries":{"GB":{"players":[],"report_week":9},"NE":{"players":[],"report_week":9}},"elo_home":1602,"elo_away":1535,"power_home":3.9,"power_away":2.1},{"game_id":"2026_09_ARI_SEA","kickoff":"2026-11-08 16:25:00","day":"Sun Nov 08, 04:25 PM ET","away":"ARI","home":"SEA","away_qb":"Gardner Minshew","home_qb":"Drew Lock","spread_line":8.5,"total_line":39.5,"home_ml":-455.0,"away_ml":350.0,"home_spread_odds":-108.0,"away_spread_odds":-112.0,"mkt_p_home":0.78674,"model_margin":5.3,"model_margin_lo":5.0,"model_margin_hi":8.1,"final_margin":8.5,"pick":"SEA","pick_prob":0.77468,"confidence":"High","p_home_win":0.77468,"p_home_win_lo":0.7668,"p_home_win_hi":0.79037,"p_home_cover":0.5025,"p_away_cover":0.4975,"p_push":0.0,"sim_score":"ARI 15 - SEA 24","margin_p10":-6.0,"margin_p90":26.0,"margin_hist":[0.0001,0.0,0.0,0.0001,0.0004,0.0001,0.0002,0.0005,0.0002,0.0005,0.0005,0.0015,0.0006,0.0008,0.0019,0.0018,0.0012,0.0024,0.0038,0.0028,0.0021,0.0103,0.0041,0.0045,0.0047,0.0112,0.003,0.0093,0.0225,0.0138,0.0079,0.0102,0.0607,0.0187,0.0218,0.002,0.0237,0.0224,0.0836,0.0158,0.0158,0.0295,0.0546,0.0256,0.0099,0.0392,0.017,0.0199,0.0186,0.063,0.0163,0.024,0.0372,0.0256,0.0119,0.022,0.0271,0.0126,0.0154,0.0258,0.0131,0.0112,0.0088,0.0184,0.0054,0.0046,0.0139,0.0055,0.0031,0.0044,0.0076],"bets":[{"kind":"ML","team":"SEA","odds":-455.0,"p":0.77368,"p_push":0.002,"breakeven":0.81982,"ev":-0.05429,"kelly":0.0},{"kind":"ML","team":"ARI","odds":350.0,"p":0.22432,"p_push":0.002,"breakeven":0.22222,"ev":0.01146,"kelly":0.00328},{"kind":"Spread","team":"SEA","odds":-108.0,"p":0.5025,"p_push":0.0,"breakeven":0.51923,"ev":-0.03222,"kelly":0.0},{"kind":"Spread","team":"ARI","odds":-112.0,"p":0.4975,"p_push":0.0,"breakeven":0.5283,"ev":-0.0583,"kelly":0.0}],"best":{"kind":"ML","team":"ARI","odds":350.0,"p":0.22432,"p_push":0.002,"breakeven":0.22222,"ev":0.01146,"kelly":0.00328},"tier":"WATCH","stake":0.0,"shop":null,"drivers":[{"factor":"Elo rating","pts":3.6},{"factor":"Passing efficiency","pts":1.5},{"factor":"EPA in competitive situations","pts":-1.5},{"factor":"TD per drive","pts":-1.3}],"injuries":{"ARI":{"players":[],"report_week":9},"SEA":{"players":[],"report_week":9}},"elo_home":1623,"elo_away":1395,"power_home":3.0,"power_away":-5.3},{"game_id":"2026_09_TB_CHI","kickoff":"2026-11-08 20:20:00","day":"Sun Nov 08, 08:20 PM ET","away":"TB","home":"CHI","away_qb":"Baker Mayfield","home_qb":"Caleb Williams","spread_line":6.0,"total_line":47.5,"home_ml":-298.0,"away_ml":240.0,"home_spread_odds":-112.0,"away_spread_odds":-108.0,"mkt_p_home":0.71797,"model_margin":4.7,"model_margin_lo":2.1,"model_margin_hi":6.3,"final_margin":6.0,"pick":"CHI","pick_prob":0.69962,"confidence":"Medium","p_home_win":0.69962,"p_home_win_lo":0.68023,"p_home_win_hi":0.71747,"p_home_cover":0.4839,"p_away_cover":0.48662,"p_push":0.02948,"sim_score":"TB 21 - CHI 27","margin_p10":-8.0,"margin_p90":23.0,"margin_hist":[0.0001,0.0002,0.0001,0.0002,0.0008,0.0001,0.0003,0.001,0.0005,0.0009,0.0012,0.0018,0.0018,0.0013,0.0037,0.0032,0.0018,0.0045,0.007,0.005,0.0042,0.0154,0.0051,0.0068,0.0063,0.0166,0.0047,0.0138,0.0313,0.0181,0.0112,0.0129,0.0714,0.0213,0.0243,0.0025,0.0281,0.0257,0.096,0.0176,0.0175,0.0295,0.0556,0.0262,0.0104,0.0388,0.0171,0.0176,0.0174,0.053,0.014,0.02,0.031,0.0205,0.0084,0.0178,0.0211,0.0088,0.0115,0.0179,0.0098,0.0082,0.006,0.0128,0.0038,0.0028,0.0089,0.0038,0.0014,0.0028,0.0048],"bets":[{"kind":"ML","team":"CHI","odds":-298.0,"p":0.69837,"p_push":0.0025,"breakeven":0.74874,"ev":-0.06477,"kelly":0.0},{"kind":"ML","team":"TB","odds":240.0,"p":0.29913,"p_push":0.0025,"breakeven":0.29412,"ev":0.01953,"kelly":0.00814},{"kind":"Spread","team":"CHI","odds":-112.0,"p":0.4839,"p_push":0.02948,"breakeven":0.5283,"ev":-0.05457,"kelly":0.0},{"kind":"Spread","team":"TB","odds":-108.0,"p":0.48662,"p_push":0.02948,"breakeven":0.51923,"ev":-0.03332,"kelly":0.0}],"best":{"kind":"ML","team":"TB","odds":240.0,"p":0.29913,"p_push":0.0025,"breakeven":0.29412,"ev":0.01953,"kelly":0.00814},"tier":"WATCH","stake":0.0,"shop":null,"drivers":[{"factor":"Elo rating","pts":1.9},{"factor":"Sack rate","pts":1.2},{"factor":"Passing efficiency","pts":0.9},{"factor":"Success rate","pts":0.8}],"injuries":{"TB":{"players":[],"report_week":9},"CHI":{"players":[],"report_week":9}},"elo_home":1618,"elo_away":1496,"power_home":5.1,"power_away":3.5},{"game_id":"2026_09_BUF_MIN","kickoff":"2026-11-09 20:15:00","day":"Mon Nov 09, 08:15 PM ET","away":"BUF","home":"MIN","away_qb":"Josh Allen","home_qb":"Kyler Murray","spread_line":-3.5,"total_line":45.5,"home_ml":150.0,"away_ml":-180.0,"home_spread_odds":-115.0,"away_spread_odds":-105.0,"mkt_p_home":0.38356,"model_margin":-2.7,"model_margin_lo":-5.1,"model_margin_hi":-1.7,"final_margin":-3.5,"pick":"BUF","pick_prob":0.6545,"confidence":"Medium","p_home_win":0.3455,"p_home_win_lo":0.33377,"p_home_win_hi":0.36043,"p_home_cover":0.49957,"p_away_cover":0.50043,"p_push":0.0,"sim_score":"BUF 25 - MIN 20","margin_p10":-21.0,"margin_p90":10.0,"margin_hist":[0.0029,0.0026,0.0009,0.0026,0.008,0.0022,0.0026,0.0094,0.004,0.0069,0.008,0.0144,0.01,0.0079,0.0166,0.0164,0.0077,0.0164,0.0286,0.0185,0.0124,0.0506,0.0168,0.0167,0.0155,0.0382,0.0102,0.027,0.0528,0.0312,0.0166,0.0181,0.0966,0.027,0.0292,0.0026,0.0276,0.0231,0.0806,0.0144,0.013,0.0198,0.0352,0.0151,0.0059,0.0182,0.008,0.0071,0.0068,0.019,0.0049,0.0064,0.0088,0.0057,0.002,0.0037,0.0038,0.0018,0.002,0.003,0.0018,0.0014,0.0008,0.0016,0.0003,0.0002,0.0006,0.0004,0.0001,0.0001,0.0004],"bets":[{"kind":"ML","team":"MIN","odds":150.0,"p":0.34418,"p_push":0.00265,"breakeven":0.4,"ev":-0.13691,"kelly":0.0},{"kind":"ML","team":"BUF","odds":-180.0,"p":0.65317,"p_push":0.00265,"breakeven":0.64286,"ev":0.0187,"kelly":0.03366},{"kind":"Spread","team":"MIN","odds":-115.0,"p":0.49957,"p_push":0.0,"breakeven":0.53488,"ev":-0.06601,"kelly":0.0},{"kind":"Spread","team":"BUF","odds":-105.0,"p":0.50043,"p_push":0.0,"breakeven":0.5122,"ev":-0.02298,"kelly":0.0}],"best":{"kind":"ML","team":"BUF","odds":-180.0,"p":0.65317,"p_push":0.00265,"breakeven":0.64286,"ev":0.0187,"kelly":0.03366},"tier":"WATCH","stake":0.0,"shop":null,"drivers":[{"factor":"Starting QB quality","pts":-2.2},{"factor":"Elo rating","pts":-0.8},{"factor":"Pass rate over expected","pts":-0.7},{"factor":"Dome","pts":-0.6}],"injuries":{"BUF":{"players":[],"report_week":9},"MIN":{"players":[],"report_week":9}},"elo_home":1614,"elo_away":1664,"power_home":4.2,"power_away":5.4}],"backtest":{"accuracy":{"n_games":1808,"model_only_brier":0.22023,"blended_brier":0.21088,"market_brier":0.2111,"blended_logloss":0.60938,"market_logloss":0.60976,"blended_acc":0.66593,"market_acc":0.66593,"model_only_acc":0.63883,"model_only_mae":10.06733,"market_mae":9.75358,"blended_mae":9.75358},"calibration":[{"pred":0.089,"actual":0.0,"n":3},{"pred":0.162,"actual":0.225,"n":40},{"pred":0.254,"actual":0.211,"n":142},{"pred":0.352,"actual":0.344,"n":308},{"pred":0.456,"actual":0.434,"n":221},{"pred":0.549,"actual":0.547,"n":256},{"pred":0.651,"actual":0.609,"n":404},{"pred":0.747,"actual":0.737,"n":293},{"pred":0.836,"actual":0.915,"n":130},{"pred":0.921,"actual":0.909,"n":11}],"grid":[{"kind":"ML","ev_min":0.0,"select":{"n":363,"roi":-0.0738,"units":-26.79117,"win_rate":0.46133,"se":0.06192},"holdout":{"n":326,"roi":0.09445,"units":30.79172,"win_rate":0.44615,"se":0.08214},"all":{"n":689,"roi":0.00581,"units":4.00054,"win_rate":0.45415,"se":0.0508}},{"kind":"ML","ev_min":0.02,"select":{"n":138,"roi":-0.09866,"units":-13.61452,"win_rate":0.42754,"se":0.09684},"holdout":{"n":161,"roi":-0.07154,"units":-11.51718,"win_rate":0.3375,"se":0.12435},"all":{"n":299,"roi":-0.08405,"units":-25.13171,"win_rate":0.37919,"se":0.08038}},{"kind":"ML","ev_min":0.03,"select":{"n":82,"roi":-0.18484,"units":-15.15689,"win_rate":0.36585,"se":0.12791},"holdout":{"n":126,"roi":-0.06409,"units":-8.07506,"win_rate":0.312,"se":0.14869},"all":{"n":208,"roi":-0.11169,"units":-23.23195,"win_rate":0.33333,"se":0.10309}},{"kind":"ML","ev_min":0.04,"select":{"n":47,"roi":-0.19215,"units":-9.03083,"win_rate":0.31915,"se":0.18405},"holdout":{"n":91,"roi":-0.10961,"units":-9.97417,"win_rate":0.24176,"se":0.18911},"all":{"n":138,"roi":-0.13772,"units":-19.005,"win_rate":0.26812,"se":0.1392}},{"kind":"ML","ev_min":0.05,"select":{"n":30,"roi":-0.2195,"units":-6.58489,"win_rate":0.3,"se":0.23306},"holdout":{"n":75,"roi":-0.26393,"units":-19.79448,"win_rate":0.16,"se":0.21025},"all":{"n":105,"roi":-0.25123,"units":-26.37937,"win_rate":0.2,"se":0.1637}},{"kind":"ML","ev_min":0.06,"select":{"n":20,"roi":-0.62368,"units":-12.47355,"win_rate":0.15,"se":0.21343},"holdout":{"n":59,"roi":-0.31102,"units":-18.35,"win_rate":0.13559,"se":0.23423},"all":{"n":79,"roi":-0.39017,"units":-30.82355,"win_rate":0.13924,"se":0.18307}},{"kind":"ML","ev_min":0.08,"select":{"n":10,"roi":-0.48235,"units":-4.82355,"win_rate":0.2,"se":0.36424},"holdout":{"n":45,"roi":-0.32,"units":-14.4,"win_rate":0.13333,"se":0.26958},"all":{"n":55,"roi":-0.34952,"units":-19.22355,"win_rate":0.14545,"se":0.22922}},{"kind":"ML","ev_min":0.1,"select":{"n":8,"roi":-0.77419,"units":-6.19355,"win_rate":0.125,"se":0.22581},"holdout":{"n":35,"roi":-0.41143,"units":-14.4,"win_rate":0.11429,"se":0.29357},"all":{"n":43,"roi":-0.47892,"units":-20.59355,"win_rate":0.11628,"se":0.24258}},{"kind":"Spread","ev_min":0.0,"select":{"n":418,"roi":-0.08957,"units":-37.43904,"win_rate":0.44878,"se":0.04886},"holdout":{"n":102,"roi":0.1727,"units":17.61528,"win_rate":0.59184,"se":0.09564},"all":{"n":520,"roi":-0.03812,"units":-19.82376,"win_rate":0.47638,"se":0.04373}},{"kind":"Spread","ev_min":0.02,"select":{"n":176,"roi":-0.09266,"units":-16.30777,"win_rate":0.44186,"se":0.07605},"holdout":{"n":20,"roi":0.30756,"units":6.15118,"win_rate":0.65,"se":0.22017},"all":{"n":196,"roi":-0.05182,"units":-10.1566,"win_rate":0.46354,"se":0.07224}},{"kind":"Spread","ev_min":0.03,"select":{"n":105,"roi":-0.14552,"units":-15.28,"win_rate":0.41176,"se":0.09826},"holdout":{"n":9,"roi":0.34231,"units":3.08078,"win_rate":0.66667,"se":0.33568},"all":{"n":114,"roi":-0.10701,"units":-12.19922,"win_rate":0.43243,"se":0.0947}},{"kind":"Spread","ev_min":0.04,"select":{"n":63,"roi":-0.16,"units":-10.08,"win_rate":0.40323,"se":0.1284},"holdout":{"n":1,"roi":1.05,"units":1.05,"win_rate":1.0,"se":null},"all":{"n":64,"roi":-0.14109,"units":-9.03,"win_rate":0.4127,"se":0.12779}},{"kind":"Spread","ev_min":0.05,"select":{"n":33,"roi":-0.05,"units":-1.65,"win_rate":0.45455,"se":0.18399},"holdout":{"n":0,"roi":null,"win_rate":null,"units":0.0},"all":{"n":33,"roi":-0.05,"units":-1.65,"win_rate":0.45455,"se":0.18399}},{"kind":"Spread","ev_min":0.06,"select":{"n":21,"roi":-0.00286,"units":-0.06,"win_rate":0.47619,"se":0.23389},"holdout":{"n":0,"roi":null,"win_rate":null,"units":0.0},"all":{"n":21,"roi":-0.00286,"units":-0.06,"win_rate":0.47619,"se":0.23389}},{"kind":"Spread","ev_min":0.08,"select":{"n":0,"roi":null,"win_rate":null,"units":0.0},"holdout":{"n":0,"roi":null,"win_rate":null,"units":0.0},"all":{"n":0,"roi":null,"win_rate":null,"units":0.0}},{"kind":"Spread","ev_min":0.1,"select":{"n":0,"roi":null,"win_rate":null,"units":0.0},"holdout":{"n":0,"roi":null,"win_rate":null,"units":0.0},"all":{"n":0,"roi":null,"win_rate":null,"units":0.0}}],"policy":{"ML":{"ev_min":0.0,"live":false,"select":{"n":363,"roi":-0.0738,"units":-26.79117,"win_rate":0.46133,"se":0.06192},"holdout":{"n":326,"roi":0.09445,"units":30.79172,"win_rate":0.44615,"se":0.08214}},"Spread":{"ev_min":0.0,"live":false,"select":{"n":418,"roi":-0.08957,"units":-37.43904,"win_rate":0.44878,"se":0.04886},"holdout":{"n":102,"roi":0.1727,"units":17.61528,"win_rate":0.59184,"se":0.09564}}},"by_season":{"ML":{"2020":{"n":111,"roi":-0.23816,"units":-26.43626,"win_rate":0.36937,"se":0.10408},"2021":{"n":139,"roi":-0.04144,"units":-5.76043,"win_rate":0.47826,"se":0.10507},"2022":{"n":113,"roi":0.04784,"units":5.40551,"win_rate":0.53097,"se":0.11066},"2023":{"n":89,"roi":0.17948,"units":15.97346,"win_rate":0.52809,"se":0.15169},"2024":{"n":80,"roi":0.09159,"units":7.32745,"win_rate":0.5,"se":0.1507},"2025":{"n":121,"roi":-0.04307,"units":-5.21105,"win_rate":0.33058,"se":0.1436},"2026":{"n":36,"roi":0.35283,"units":12.70186,"win_rate":0.51429,"se":0.26164}},"Spread":{"2020":{"n":124,"roi":-0.16795,"units":-20.82601,"win_rate":0.41129,"se":0.08979},"2021":{"n":139,"roi":-0.0166,"units":-2.30781,"win_rate":0.48551,"se":0.08588},"2022":{"n":155,"roi":-0.09229,"units":-14.30523,"win_rate":0.44595,"se":0.07932},"2023":{"n":29,"roi":-0.03668,"units":-1.06367,"win_rate":0.48148,"se":0.18182},"2024":{"n":31,"roi":0.21767,"units":6.7479,"win_rate":0.62069,"se":0.1705},"2025":{"n":29,"roi":0.30809,"units":8.93473,"win_rate":0.65517,"se":0.17937},"2026":{"n":13,"roi":0.23049,"units":2.99632,"win_rate":0.61538,"se":0.28092}}},"curves":{"label":["2020-W1","2020-W2","2020-W3","2020-W4","2020-W5","2020-W6","2020-W7","2020-W8","2020-W9","2020-W10","2020-W11","2020-W12","2020-W13","2020-W14","2020-W15","2020-W16","2020-W17","2020-W18","2020-W19","2020-W20","2020-W21","2021-W1","2021-W2","2021-W3","2021-W4","2021-W5","2021-W6","2021-W7","2021-W8","2021-W9","2021-W10","2021-W11","2021-W12","2021-W13","2021-W14","2021-W15","2021-W16","2021-W17","2021-W18","2021-W19","2021-W20","2021-W21","2021-W22","2022-W1","2022-W2","2022-W3","2022-W4","2022-W5","2022-W6","2022-W7","2022-W8","2022-W9","2022-W10","2022-W11","2022-W12","2022-W13","2022-W14","2022-W15","2022-W16","2022-W17","2022-W18","2022-W19","2022-W20","2022-W21","2022-W22","2023-W1","2023-W2","2023-W3","2023-W4","2023-W5","2023-W6","2023-W7","2023-W8","2023-W9","2023-W10","2023-W11","2023-W12","2023-W13","2023-W14","2023-W15","2023-W16","2023-W17","2023-W18","2023-W19","2023-W20","2023-W21","2023-W22","2024-W1","2024-W2","2024-W3","2024-W4","2024-W5","2024-W6","2024-W7","2024-W8","2024-W9","2024-W10","2024-W11","2024-W12","2024-W13","2024-W14","2024-W15","2024-W16","2024-W17","2024-W18","2024-W19","2024-W20","2024-W21","2024-W22","2025-W1","2025-W2","2025-W3","2025-W4","2025-W5","2025-W6","2025-W7","2025-W8","2025-W9","2025-W10","2025-W11","2025-W12","2025-W13","2025-W14","2025-W15","2025-W16","2025-W17","2025-W18","2025-W19","2025-W20","2025-W21","2025-W22","2026-W1","2026-W2","2026-W3","2026-W4","2026-W5","2026-W6","2026-W7","2026-W8"],"ML":[-2.19,-1.53,-3.92,-8.7,-14.7,-12.37,-16.87,-15.77,-15.17,-17.89,-16.02,-17.08,-17.21,-23.92,-25.75,-23.13,-30.2,-27.01,-28.01,-26.44,-26.44,-30.49,-31.24,-36.94,-36.61,-33.78,-37.78,-39.93,-39.06,-30.96,-31.92,-34.02,-30.45,-31.27,-29.09,-32.13,-30.63,-33.95,-35.43,-34.87,-33.28,-32.72,-32.2,-35.01,-35.31,-32.3,-29.94,-29.78,-26.69,-23.81,-24.59,-26.43,-25.38,-22.77,-22.22,-19.16,-17.89,-19.33,-20.09,-19.45,-24.08,-24.79,-24.79,-26.79,-26.79,-26.99,-26.3,-21.44,-21.08,-20.45,-17.73,-19.53,-22.53,-20.08,-16.98,-21.98,-23.44,-18.57,-17.68,-20.0,-18.1,-13.53,-15.54,-10.82,-10.82,-10.82,-10.82,-6.85,-0.77,0.59,3.43,2.43,3.55,2.8,0.32,2.07,6.07,3.07,4.62,1.73,0.73,-2.7,-7.96,-8.19,-5.59,-6.39,-3.49,-3.49,-3.49,-0.18,-3.64,-3.04,-2.72,1.51,3.55,-1.45,-4.01,2.59,4.33,-2.67,-5.02,-0.52,2.5,-0.16,-2.86,-3.2,-7.35,-7.7,-8.7,-8.7,-8.7,-6.31,-5.71,-6.92,-6.93,-5.38,-1.75,3.59,4.0],"Spread":[-0.98,1.09,-0.88,-5.86,-5.84,-7.84,-11.79,-16.69,-19.65,-19.57,-15.46,-16.51,-21.45,-27.45,-28.28,-27.18,-23.87,-22.85,-22.89,-20.83,-20.83,-23.65,-18.59,-23.56,-22.53,-20.49,-24.36,-26.38,-29.38,-27.26,-30.2,-31.04,-28.87,-30.73,-24.56,-30.46,-27.41,-25.37,-25.37,-22.21,-23.13,-23.13,-23.13,-26.08,-29.03,-25.84,-24.69,-26.6,-28.58,-31.54,-32.45,-34.39,-36.35,-34.21,-36.1,-35.03,-28.88,-29.76,-27.61,-30.59,-35.59,-34.44,-35.44,-37.44,-37.44,-38.44,-38.44,-38.44,-38.44,-38.44,-37.46,-38.46,-40.46,-39.48,-40.48,-40.5,-39.55,-38.53,-37.53,-37.53,-38.57,-39.57,-38.57,-37.5,-38.5,-38.5,-38.5,-37.52,-36.54,-37.56,-35.63,-35.68,-36.68,-34.68,-34.68,-36.68,-34.7,-32.72,-33.72,-33.72,-32.74,-31.74,-30.74,-29.75,-29.75,-31.75,-31.75,-31.75,-31.75,-30.77,-30.77,-32.77,-30.74,-30.79,-27.81,-27.81,-29.81,-30.81,-30.81,-30.81,-30.81,-29.76,-27.76,-25.78,-25.78,-23.8,-23.8,-23.8,-22.82,-22.82,-22.82,-22.82,-22.8,-20.8,-21.8,-23.8,-22.75,-20.82,-19.82]},"blends":{"2020":{"beta":0.0,"beta_raw":-0.13694,"beta_se":0.14609,"n":534,"intercept":-0.98768},"2021":{"beta":0.0,"beta_raw":-0.07461,"beta_se":0.12637,"n":803,"intercept":-1.00241},"2022":{"beta":0.0,"beta_raw":-0.09503,"beta_se":0.11309,"n":1088,"intercept":-0.72148},"2023":{"beta":0.0,"beta_raw":-0.09196,"beta_se":0.10096,"n":1372,"intercept":-0.52486},"2024":{"beta":0.0,"beta_raw":-0.11609,"beta_se":0.09583,"n":1657,"intercept":-0.23866},"2025":{"beta":0.0,"beta_raw":-0.03857,"beta_se":0.09004,"n":1942,"intercept":-0.10091},"2026":{"beta":0.0,"beta_raw":-0.08984,"beta_se":0.08424,"n":2227,"intercept":-0.00773}},"select_seasons":[2020,2021,2022],"holdout_seasons":[2023,2024,2025,2026]}}</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const M = D.meta, G = D.games, B = D.backtest;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct = (x, d=0) => (x == null || isNaN(x)) ? '–' : (100*x).toFixed(d) + '%';
+const sgn = (x, d=1) => (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(d);
+const odds = o => (o > 0 ? '+' : '−') + Math.abs(o).toFixed(0);
+function lineTxt(L, home, away){ if (L == null || isNaN(L)) return '–'; if (Math.abs(L) < 0.05) return 'PK'; return (L > 0 ? home : away) + ' −' + Math.abs(L).toFixed(1); }
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+let state = { filter:'all', sort:'time', open:new Set(), bankroll: M.bankroll };
+try { const b = localStorage.getItem('bankroll'); if (b) state.bankroll = +b; } catch(e) {}
+
+$('#h1').textContent = `${M.season} · Week ${M.week}`;
+$('#sub').textContent = `NFL model desk · updated ${M.generated}`;
+
+function stakeFor(g){
+  if (g.tier !== 'BET' && g.tier !== 'PRICE EDGE') return 0;
+  const cap = g.tier === 'BET' ? M.max_bet : M.max_bet/2;
+  return state.bankroll * Math.min(M.kelly_fraction * g.best.kelly, cap);
+}
+
+function renderTop(){
+  const bets = G.filter(g => g.tier === 'BET' || g.tier === 'PRICE EDGE');
+  const watch = G.filter(g => g.tier === 'WATCH').length;
+  const stake = Math.min(bets.reduce((s,g) => s + stakeFor(g), 0), state.bankroll * M.max_week);
+  const st = $('#status');
+  st.className = 'status ' + (bets.length ? 'hasbets' : 'nobets');
+  st.innerHTML = bets.length
+    ? `<div class="big">${bets.length} bet${bets.length>1?'s':''}</div><div><strong>Total stake ${'$'+stake.toFixed(0)}</strong> of a $${state.bankroll.toFixed(0)} bankroll. Each bet passed the out-of-sample test for its type. Sizes use quarter-Kelly, capped at ${pct(M.max_bet)} per bet.</div>`
+    : `<div class="big">No bets</div><div><strong>The model has not beaten the closing line in seasons it never saw</strong>, so it stakes $0 this week. Its winner picks and fair spreads are below. ${watch} game${watch===1?'':'s'} show a small paper edge (WATCH). Track them, but they have not earned real money.</div>`;
+  const a = B.accuracy;
+  $('#strip').innerHTML = [
+    [G.length, 'games on the slate'],
+    [pct(a.blended_acc,1), 'winners picked, 2020–26'],
+    [a.blended_brier.toFixed(3), 'Brier score (market ' + a.market_brier.toFixed(3) + ')'],
+    ['$' + stake.toFixed(0), 'recommended stake']
+  ].map(([v,k]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+  const n = [];
+  if (!M.injury_report_for_week) n.push(`<b>Week ${M.week} injury reports aren't out yet</b> (teams file them Wednesday to Friday). The injuries shown are from last week's report. Rerun <span class="cmd">python run_all.py</span> on Saturday before betting.`);
+  n.push(esc(M.shopping));
+  $('#notices').innerHTML = n.map(x => `<div class="notice">${x}</div>`).join('');
+}
+
+function rulerSVG(g){
+  const W = 360, H = 58, R = 20, x = v => 14 + (Math.max(-R, Math.min(R, v)) + R) / (2*R) * (W - 28);
+  const ink3 = css('--ink-3'), line = css('--line'), acc = css('--accent'), ink = css('--ink');
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Vegas line ${esc(lineTxt(g.spread_line,g.home,g.away))}, model line ${esc(lineTxt(g.model_margin,g.home,g.away))}">`;
+  s += `<line x1="${x(-R)}" x2="${x(R)}" y1="30" y2="30" stroke="${line}" stroke-width="2"/>`;
+  for (const k of [-14,-10,-7,-3,0,3,7,10,14]) {
+    const key = Math.abs(k) === 3 || Math.abs(k) === 7;
+    s += `<line x1="${x(k)}" x2="${x(k)}" y1="${key?22:26}" y2="${key?38:34}" stroke="${key?ink3:line}" stroke-width="${key?1.5:1}"/>`;
+    s += `<text x="${x(k)}" y="52" font-size="9" text-anchor="middle" fill="${ink3}" font-family="IBM Plex Mono,monospace">${k===0?'0':Math.abs(k)}</text>`;
+  }
+  s += `<text x="${x(-R)}" y="12" font-size="9" fill="${ink3}" font-family="IBM Plex Mono,monospace">${esc(g.away)} BY</text>`;
+  s += `<text x="${x(R)}" y="12" font-size="9" text-anchor="end" fill="${ink3}" font-family="IBM Plex Mono,monospace">${esc(g.home)} BY</text>`;
+  s += `<rect x="${x(g.model_margin_lo)}" y="26" width="${Math.max(2, x(g.model_margin_hi)-x(g.model_margin_lo))}" height="8" rx="4" fill="${acc}" opacity=".22"/>`;
+  s += `<circle cx="${x(g.model_margin)}" cy="30" r="5.5" fill="${acc}"/>`;
+  const vx = x(g.spread_line);
+  s += `<path d="M${vx} 22 l6 8 l-6 8 l-6 -8z" fill="${ink}"/>`;
+  return s + '</svg>';
+}
+
+function histSVG(g){
+  const W = 560, H = 170, pad = 24, h = g.margin_hist, n = h.length, mx = Math.max(...h);
+  const bw = (W - 2*pad) / n, y = v => H - 22 - v / mx * (H - 40);
+  const home = css('--home'), away = css('--away'), push = css('--push'), ink3 = css('--ink-3'), ink = css('--ink'), line = css('--line');
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Simulated final margins">`;
+  s += `<line x1="${pad}" x2="${W-pad}" y1="${H-22}" y2="${H-22}" stroke="${line}"/>`;
+  h.forEach((v, i) => {
+    const m = i - 35, c = m > 0 ? home : m < 0 ? away : push;
+    s += `<rect x="${pad + i*bw + .5}" y="${y(v)}" width="${Math.max(1, bw-1)}" height="${H-22-y(v)}" fill="${c}" opacity="${Math.abs(m)===3||Math.abs(m)===7?1:.72}"/>`;
+  });
+  for (const k of [-28,-21,-14,-7,0,7,14,21,28]) s += `<text x="${pad + (k+35+.5)*bw}" y="${H-6}" font-size="10" text-anchor="middle" fill="${ink3}" font-family="IBM Plex Mono,monospace">${k>0?'+'+k:k}</text>`;
+  const lx = pad + (g.spread_line + 35 + .5) * bw;
+  s += `<line x1="${lx}" x2="${lx}" y1="10" y2="${H-22}" stroke="${ink}" stroke-dasharray="3 3"/>`;
+  s += `<text x="${lx+4}" y="18" font-size="10" fill="${ink}" font-family="IBM Plex Mono,monospace">Vegas line</text>`;
+  return s + '</svg>';
+}
+
+function ticket(g){
+  const ph = g.p_home_win, pickHome = g.pick === g.home;
+  const best = g.best, tierCls = g.tier.split(' ')[0];
+  const stake = stakeFor(g);
+  const betLine = best.kind === 'ML' ? `${best.team} ML ${odds(best.odds)}`
+    : `${best.team} ${best.point != null ? sgn(best.point) : (best.team === g.home ? sgn(-g.spread_line) : sgn(g.spread_line))} (${odds(best.odds)})`;
+  const action = g.tier === 'BET' || g.tier === 'PRICE EDGE' ? `Bet $${stake.toFixed(0)}: ${esc(betLine)}${best.book ? ' at ' + esc(best.book) : ''}`
+    : g.tier === 'WATCH' ? `Paper only: ${esc(betLine)}` : 'No edge';
+  const open = state.open.has(g.game_id);
+  return `<article class="ticket" data-tier="${esc(g.tier)}" data-id="${esc(g.game_id)}">
+  <div class="row" role="button" tabindex="0" aria-expanded="${open}">
+    <div class="match"><div class="teams">${esc(g.away)}<span class="at">@</span>${esc(g.home)}</div>
+      <div class="when">${esc(g.day)}</div><div class="qbs">${esc(g.away_qb||'')} vs ${esc(g.home_qb||'')}</div></div>
+    <div class="pickcol"><div class="lab">Winner pick</div>
+      <div><span class="who">${esc(g.pick)}</span> <span class="num">${pct(g.pick_prob)}</span><span class="conf">${esc(g.confidence)}</span></div>
+      <div class="bar" title="${esc(g.away)} ${pct(1-ph)} / ${esc(g.home)} ${pct(ph)}"><span style="width:${(1-ph)*100}%;background:var(--away)"></span><span style="width:${ph*100}%;background:var(--home)"></span></div></div>
+    <div class="ruler">${rulerSVG(g)}<div class="legend"><span>◆ Vegas ${esc(lineTxt(g.spread_line,g.home,g.away))}</span><span><i style="background:var(--accent);border-radius:50%"></i>Model ${esc(lineTxt(g.model_margin,g.home,g.away))}</span></div></div>
+    <div class="betcol"><span class="tier ${tierCls}">${esc(g.tier)}</span><div class="line">${action}</div><div class="ev">best EV ${sgn(100*best.ev,1)}%</div></div>
+  </div>
+  ${open ? detail(g) : ''}
+</article>`;
+}
+
+function detail(g){
+  const rows = g.bets.map(b => {
+    const ln = b.kind === 'ML' ? 'ML' : (b.team === g.home ? sgn(-g.spread_line) : sgn(g.spread_line));
+    return `<tr><td>${esc(b.team)} ${esc(ln)}</td><td class="n">${odds(b.odds)}</td><td class="n">${pct(b.p,1)}</td><td class="n">${pct(b.breakeven,1)}</td><td class="n ${b.ev>0?'pos':'neg'}">${sgn(100*b.ev,1)}%</td></tr>`;
+  }).join('');
+  const inj = [g.away, g.home].map(t => {
+    const I = g.injuries[t] || {players:[]};
+    const lst = I.players.length ? I.players.map(p => `<li><span class="st-${esc(p.status)}">${esc(p.status)}</span> · ${esc(p.name)} <span class="faint">${esc(p.pos)}</span></li>`).join('') : '<li class="faint">Nobody listed</li>';
+    return `<div><div class="eyebrow">${esc(t)}${I.report_week ? ' · week ' + I.report_week + ' report' : ''}</div><ul class="plain">${lst}</ul></div>`;
+  }).join('');
+  const drv = g.drivers.length ? g.drivers.map(d => `<li><span>${esc(d.factor)}</span><span class="num ${d.pts>0?'':'neg'}">${d.pts>0?esc(g.home):esc(g.away)} ${Math.abs(d.pts).toFixed(1)}</span></li>`).join('') : '<li class="faint">No single factor dominates</li>';
+  const cov = g.p_home_cover;
+  return `<div class="detail">
+    <div>
+      <h3>20,000-game simulation</h3>
+      <div class="hist">${histSVG(g)}</div>
+      <div class="legend"><span><i style="background:var(--away)"></i>${esc(g.away)} wins</span><span><i style="background:var(--home)"></i>${esc(g.home)} wins</span><span>Taller bars at 3 and 7 are the NFL's key numbers</span></div>
+      <dl class="kv" style="margin-top:12px">
+        <dt>Typical score</dt><dd>${esc(g.sim_score)}</dd>
+        <dt>${esc(g.home)} win chance</dt><dd>${pct(g.p_home_win,1)} <span class="faint">(80% band ${pct(g.p_home_win_lo)}–${pct(g.p_home_win_hi)})</span></dd>
+        <dt>Covers ${esc(lineTxt(g.spread_line,g.home,g.away))}</dt><dd>${esc(g.home)} ${pct(cov,1)} · ${esc(g.away)} ${pct(g.p_away_cover,1)} · push ${pct(g.p_push,1)}</dd>
+        <dt>Middle 80% of margins</dt><dd>${sgn(g.margin_p10,0)} to ${sgn(g.margin_p90,0)} (home view)</dd>
+        <dt>Football model alone</dt><dd>${esc(lineTxt(g.model_margin,g.home,g.away))} <span class="faint">(range ${sgn(g.model_margin_lo)} to ${sgn(g.model_margin_hi)})</span></dd>
+        <dt>Market win chance</dt><dd>${esc(g.home)} ${pct(g.mkt_p_home,1)} (no-vig)</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>Every bet, priced</h3>
+      <div class="tbl"><table><thead><tr><th>Bet</th><th class="n">Odds</th><th class="n">Win %</th><th class="n">Need</th><th class="n">EV</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <h3 style="margin-top:16px">Why the model leans</h3>
+      <ul class="plain drivers">${drv}</ul>
+      <h3 style="margin-top:16px">Injury report</h3>
+      <div class="inj">${inj}</div>
+    </div>
+  </div>`;
+}
+
+function renderSlate(){
+  let gs = G.slice();
+  if (state.filter !== 'all') gs = gs.filter(g => g.tier === state.filter || (state.filter === 'BET' && g.tier === 'PRICE EDGE'));
+  if (state.sort === 'ev') gs.sort((a,b) => b.best.ev - a.best.ev);
+  else if (state.sort === 'conf') gs.sort((a,b) => b.pick_prob - a.pick_prob);
+  else gs.sort((a,b) => a.kickoff.localeCompare(b.kickoff));
+  $('#slate').innerHTML = gs.length ? gs.map(ticket).join('') : `<div class="card muted">No games in this group this week.</div>`;
+}
+
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (chip) { state.filter = chip.dataset.f; document.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c === chip)); renderSlate(); return; }
+  const row = e.target.closest('.ticket > .row');
+  if (row) { const id = row.parentElement.dataset.id; state.open.has(id) ? state.open.delete(id) : state.open.add(id); renderSlate(); }
+});
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.ticket > .row')) { e.preventDefault(); e.target.click(); } });
+$('#sort').addEventListener('change', e => { state.sort = e.target.value; renderSlate(); });
+const br = $('#bankroll'); br.value = state.bankroll;
+br.addEventListener('input', () => { state.bankroll = Math.max(0, +br.value || 0); try { localStorage.setItem('bankroll', state.bankroll); } catch(e) {} renderTop(); renderSlate(); });
+
+/* ---------- track record ---------- */
+function lineChart(series, opts){
+  const W = 560, H = 220, L = 44, Rr = 12, T = 14, Bt = 28;
+  const all = series.flatMap(s => s.y), n = Math.max(...series.map(s => s.y.length));
+  let lo = Math.min(0, ...all), hi = Math.max(0, ...all); if (hi - lo < 1) hi = lo + 1;
+  const pad = (hi - lo) * .08; lo -= pad; hi += pad;
+  const x = i => L + i / Math.max(1, n - 1) * (W - L - Rr), y = v => T + (hi - v) / (hi - lo) * (H - T - Bt);
+  const ink3 = css('--ink-3'), line = css('--line'), ink = css('--ink');
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label)}">`;
+  const step = niceStep((hi - lo) / 4);
+  for (let v = Math.ceil(lo/step)*step; v <= hi; v += step) {
+    s += `<line x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}" stroke="${line}" ${Math.abs(v)<1e-9?'':'stroke-dasharray="2 4"'}/>`;
+    s += `<text x="${L-6}" y="${y(v)+3}" font-size="10" text-anchor="end" fill="${ink3}" font-family="IBM Plex Mono,monospace">${+v.toFixed(1)}</text>`;
+  }
+  series.forEach(se => {
+    if (!se.y.length) return;
+    const pts = se.y.map((v,i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+    s += `<polyline points="${pts}" fill="none" stroke="${se.color}" stroke-width="2"/>`;
+    const li = se.y.length - 1; s += `<circle cx="${x(li)}" cy="${y(se.y[li])}" r="3.5" fill="${se.color}"/>`;
+    s += `<text x="${x(li)-6}" y="${y(se.y[li]) - 8}" font-size="11" text-anchor="end" fill="${se.color}" font-family="IBM Plex Mono,monospace">${esc(se.name)} ${sgn(se.y[li],1)}u</text>`;
+  });
+  if (opts.xlabels) opts.xlabels.forEach(([i, t]) => s += `<text x="${x(i)}" y="${H-8}" font-size="10" text-anchor="middle" fill="${ink3}" font-family="IBM Plex Mono,monospace">${esc(t)}</text>`);
+  return s + '</svg>';
+}
+function niceStep(r){ const p = Math.pow(10, Math.floor(Math.log10(r))); const m = r / p; return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p; }
+
+function calibChart(){
+  const W = 360, H = 260, L = 40, R = 12, T = 12, Bt = 34, c = B.calibration;
+  const x = v => L + v * (W - L - R), y = v => T + (1 - v) * (H - T - Bt);
+  const ink3 = css('--ink-3'), line = css('--line'), acc = css('--accent');
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calibration of win probabilities">`;
+  for (const v of [0, .25, .5, .75, 1]) {
+    s += `<line x1="${x(0)}" x2="${x(1)}" y1="${y(v)}" y2="${y(v)}" stroke="${line}" stroke-dasharray="2 4"/>`;
+    s += `<text x="${L-6}" y="${y(v)+3}" font-size="10" text-anchor="end" fill="${ink3}" font-family="IBM Plex Mono,monospace">${v*100}%</text>`;
+    s += `<text x="${x(v)}" y="${H-18}" font-size="10" text-anchor="middle" fill="${ink3}" font-family="IBM Plex Mono,monospace">${v*100}%</text>`;
+  }
+  s += `<line x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}" stroke="${ink3}"/>`;
+  c.forEach(p => { const r = 2 + Math.sqrt(p.n) / 3; s += `<circle cx="${x(p.pred)}" cy="${y(p.actual)}" r="${r}" fill="${acc}" opacity=".8"/>`; });
+  s += `<text x="${(x(0)+x(1))/2}" y="${H-2}" font-size="10" text-anchor="middle" fill="${ink3}" font-family="IBM Plex Mono,monospace">predicted home win chance</text>`;
+  return s + '</svg>';
+}
+
+function renderRecord(){
+  const a = B.accuracy, pol = B.policy;
+  const curve = k => B.curves[k];
+  const lab = () => { const out = []; let last = ''; B.curves.label.forEach((t,i) => { const yr = t.slice(0,4); if (yr !== last) { out.push([i, yr]); last = yr; } }); return out; };
+  const gridRows = B.grid.map(r => {
+    const f = d => d.n ? `${d.n} · <span class="${d.roi>0?'pos':'neg'}">${sgn(100*d.roi,1)}%</span>` : '–';
+    return `<tr><td>${r.kind}</td><td class="n">&gt; ${(100*r.ev_min).toFixed(0)}%</td><td class="n">${f(r.select)}</td><td class="n">${f(r.holdout)}</td></tr>`;
+  }).join('');
+  const betas = Object.entries(B.blends).map(([s, b]) => `<tr><td>${s}</td><td class="n">${sgn(b.beta_raw,3)}</td><td class="n">±${b.beta_se.toFixed(3)}</td><td class="n">${b.beta.toFixed(2)}</td></tr>`).join('');
+  const hc = Object.entries(M.hist_conf).map(([k,v]) => `<tr><td>${k}</td><td class="n">${pct(v.hit,1)}</td><td class="n">${v.n}</td></tr>`).join('');
+  $('#v-record').innerHTML = `
+  <div class="grid2">
+    <div class="card"><h2>Accuracy vs the market</h2><p class="muted">Every number is out of sample: each season was predicted by a model trained only on earlier seasons. ${a.n_games} games, 2020–2026.</p>
+      <div class="tbl"><table><thead><tr><th></th><th class="n">Football model</th><th class="n">Final (blended)</th><th class="n">Vegas</th></tr></thead><tbody>
+      <tr><td>Winners picked</td><td class="n">${pct(a.model_only_acc,1)}</td><td class="n">${pct(a.blended_acc,1)}</td><td class="n">${pct(a.market_acc,1)}</td></tr>
+      <tr><td>Brier score ↓</td><td class="n">${a.model_only_brier.toFixed(4)}</td><td class="n">${a.blended_brier.toFixed(4)}</td><td class="n">${a.market_brier.toFixed(4)}</td></tr>
+      <tr><td>Log loss ↓</td><td class="n">–</td><td class="n">${a.blended_logloss.toFixed(4)}</td><td class="n">${a.market_logloss.toFixed(4)}</td></tr>
+      <tr><td>Avg miss, points ↓</td><td class="n">${a.model_only_mae.toFixed(2)}</td><td class="n">${a.blended_mae.toFixed(2)}</td><td class="n">${a.market_mae.toFixed(2)}</td></tr>
+      </tbody></table></div>
+      <p class="muted" style="margin-top:10px">The football model alone is a solid forecaster. It still trails Vegas, and the final blend matches Vegas because the system learned that the model's disagreements with the line don't predict results.</p></div>
+    <div class="card"><h2>Is the model's opinion worth anything?</h2><p class="muted">Each season the system measures how much of the model's gap from the Vegas line actually showed up in results (beta). 0 means none; 1 means all of it. Negative values are clipped to 0.</p>
+      <div class="tbl"><table><thead><tr><th>Season</th><th class="n">Measured</th><th class="n">Uncertainty</th><th class="n">Used</th></tr></thead><tbody>${betas}</tbody></table></div></div>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card chart"><h2>Flat-bet results, chosen rules</h2><p class="muted">Running total of units won, week by week, betting 1 unit on every game that cleared each bet type's chosen EV threshold.</p>
+      ${lineChart([{name:'Moneyline', y:curve('ML'), color:css('--away')},{name:'Spread', y:curve('Spread'), color:css('--home')}], {label:'Cumulative units', xlabels: lab()})}
+      <p>Moneyline rule <span class="verdict ${pol.ML.live?'live':'off'}">${pol.ML.live?'LIVE':'NOT LIVE'}</span> · Spread rule <span class="verdict ${pol.Spread.live?'live':'off'}">${pol.Spread.live?'LIVE':'NOT LIVE'}</span></p></div>
+    <div class="card chart"><h2>Are the probabilities honest?</h2><p class="muted">Dots on the diagonal mean "70%" really wins about 70% of the time. Dot size shows the number of games.</p>${calibChart()}
+      <div class="tbl"><table><thead><tr><th>Pick confidence</th><th class="n">Pick won</th><th class="n">Games</th></tr></thead><tbody>${hc}</tbody></table></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h2>Every betting rule tested</h2>
+    <p class="muted">A rule goes live only if it made money in the seasons used to choose it (${B.select_seasons[0]}–${B.select_seasons.at(-1)}) <b>and</b> in seasons it never saw (${B.holdout_seasons[0]}–${B.holdout_seasons.at(-1)}). Each cell shows bets · ROI per unit.</p>
+    <div class="tbl"><table><thead><tr><th>Bet type</th><th class="n">EV threshold</th><th class="n">${B.select_seasons[0]}–${String(B.select_seasons.at(-1)).slice(2)} (choose)</th><th class="n">${B.holdout_seasons[0]}–${String(B.holdout_seasons.at(-1)).slice(2)} (verify)</th></tr></thead><tbody>${gridRows}</tbody></table></div>
+  </div>`;
+}
+
+function renderMethod(){
+  $('#v-method').innerHTML = `<div class="card prose">
+  <h2>How the desk works</h2>
+  <h3>Data (build_data.py)</h3>
+  <p>Every play since 2016 from nflverse (about 400,000 snaps), official injury reports, snap counts, rosters, starting QBs, weather, rest, and the Vegas spread, moneyline, and total with their juice.</p>
+  <h3>Pipeline, in order</h3>
+  <ol class="steps">
+    <li><b>Opponent-adjusted ratings.</b> Each week, a ridge regression on all earlier games separates each team's offense from the defenses it faced. Inputs include EPA per play, success rate, passing and rushing EPA, explosive plays, sacks, red-zone and third-down rates, and a points-margin power rating. Older games fade with a 10-week half-life.</li>
+    <li><b>QB value.</b> Each starter's EPA per dropback before the game, shrunk toward backup level until he has enough snaps, plus a flag for a QB change.</li>
+    <li><b>Injuries.</b> Players listed Out or Doubtful count by their share of snaps, so a starting left tackle counts far more than a backup tight end. Questionable players count at 25%.</li>
+    <li><b>Football model.</b> Ridge regression and gradient-boosted trees, averaged and refit 40 times on resampled data, which gives a range as well as a number.</li>
+    <li><b>Market blend.</b> Final margin = Vegas line + beta × (model − line). Beta is learned only from past seasons. It has stayed at 0, so the final numbers match Vegas.</li>
+    <li><b>Monte Carlo.</b> 20,000 simulated final margins per game from a key-number-weighted bell curve (3 and 7 happen about 2–3.5× more often than a smooth curve says), centered where the market says both sides are even, then moved by the model's edge.</li>
+    <li><b>Bet pricing.</b> For every moneyline and spread at the posted odds: win chance, break-even chance, and expected value per dollar.</li>
+    <li><b>Bet rules.</b> A bet is placed only if its type is live (it proved itself out of sample) and its EV clears the threshold chosen on earlier seasons. Stake = quarter-Kelly, at most ${pct(M.max_bet)} of bankroll per bet and ${pct(M.max_week)} per week.</li>
+  </ol>
+  <h3>Tiers</h3>
+  <p><span class="tier BET">BET</span> passed every test. <span class="tier WATCH">WATCH</span> positive EV on paper, but this kind of bet hasn't proven itself, so log it and don't stake money. <span class="tier PRICE">PRICE EDGE</span> one sportsbook is off from the sharp no-vig price (needs line shopping turned on). <span class="tier PASS">PASS</span> no edge.</p>
+  <h3>Run it each week</h3>
+  <pre class="cmd">pip install pandas numpy scikit-learn pyarrow requests
+python run_all.py              # download, rebuild, backtest, predict, write dashboard.html
+python run_all.py --quick      # skip the backtest (use on game day)
+python run_all.py --bankroll 500</pre>
+  <p>Run it Tuesday for an early look, then again Saturday after injury reports are final. Open <code>dashboard.html</code> in any browser.</p>
+  <h3>Line shopping (the one edge that doesn't depend on forecasting)</h3>
+  <p>Get a free key at the-odds-api.com and save it in a file named <code>odds_api_key.txt</code> next to the scripts. The desk will then compare every US sportsbook against the sharp no-vig price and flag any book that is clearly off-market.</p>
+  <h3>What the metrics mean</h3>
+  <p><b>Brier score</b>: the average of (forecast − result)²; 0.25 is a coin flip, lower is better. <b>EV</b>: expected profit per $1. At −110 odds you need to win 52.4% to break even. <b>Kelly</b>: the bet size that grows a bankroll fastest when your edge is real. Quarter-Kelly gives up a little growth for much less risk of ruin.</p>
+  </div>`;
+}
+
+$('#foot').innerHTML = `Model trained on ${M.n_train_games.toLocaleString()} games. Probabilities are estimates from historical data, not guarantees, and sports betting can lose money. Only bet where it's legal and with money you can afford to lose. If gambling stops being fun, call 1-800-GAMBLER.`;
+
+function route(){
+  const v = (location.hash || '#slate').slice(1);
+  const view = ['slate','record','method'].includes(v) ? v : 'slate';
+  ['slate','record','method'].forEach(k => $('#v-' + k).hidden = k !== view);
+  document.querySelectorAll('nav.tabs a').forEach(a => { if (a.dataset.view === view) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
+}
+window.addEventListener('hashchange', route);
+function renderAll(){ renderTop(); renderSlate(); renderRecord(); renderMethod(); }
+renderAll(); route();
+// charts read theme colors when drawn, so redraw when the theme changes
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll); } catch(e) {}
+new MutationObserver(renderAll).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+</script>
